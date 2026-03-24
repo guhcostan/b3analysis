@@ -161,3 +161,10 @@ Python 3.10+. Gerenciado automaticamente pelo `run.sh`.
 - **CDI** é o benchmark mínimo de retorno para renda variável
 - **IPCA elevado** comprime margens de empresas com custo fixo alto
 - **BRL/USD**: moeda fraca favorece exportadoras; importadoras e endividadas em dólar sofrem
+
+---
+
+## Referências e inspirações
+
+- **[TradingAgents](https://github.com/TauricResearch/TradingAgents)** — arquitetura multi-agente para análise financeira que inspirou o design deste projeto
+- **[Investimentos em Evidência](https://www.youtube.com/@investimentosemevidencia)** — canal do Logan, fonte da metodologia de qualidade B3 (tier list, critérios eliminatórios, escadinha de lucros)
