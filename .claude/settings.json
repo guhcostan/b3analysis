@@ -1,0 +1,10 @@
+{
+  "model": "claude-sonnet-4-6",
+  "permissions": {
+    "allow": [
+      "Bash(bash run.sh *)",
+      "Bash(cat .b3profile*)",
+      "Bash(echo * > .b3profile)"
+    ]
+  }
+}

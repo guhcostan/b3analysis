@@ -83,16 +83,10 @@ Com os parâmetros coletados (TICKERS, CAPITAL, DATE), lance todos os agentes si
 ---
 
 ### Agente macro
-Model: per profile table above (use `claude --model {MACRO_MODEL} -p "..."` as bash if model differs from session)
 
-Prompt:
-```
-Think carefully before answering.
+Use o subagente registrado `macro-analyst` com: DATE={DATE}
 
-Run from workspace root:
-bash run.sh scripts/fetch_macro.py {DATE}
-
-Analyze the output and write a macro summary covering:
+O agente deve produzir uma macro summary cobrindo:
 - Selic: current level, last Copom decision, cycle direction (hiking/cutting/pausing)
 - CDI as the minimum return benchmark for equities
 - BRL/USD: trend and sector impact (exporters vs importers)
@@ -100,53 +94,33 @@ Analyze the output and write a macro summary covering:
 - Fiscal risk: any primary deficit or debt/GDP data
 - Equity environment verdict: Favorable / Neutral / Unfavorable — with justification
 - Recommended cash/Tesouro Selic reserve: 0%, 10%, or 20%
-```
 
 ---
 
 ### Um agente por ticker
-Model: per profile table above (use `claude --model {TICKER_MODEL} -p "..."` as bash if model differs from session)
 
-Prompt per TICKER:
+Use o subagente registrado `stock-analyst` com: TICKER={TICKER}, DATE={DATE}
+Use o subagente registrado `news-analyst` com: TICKER={TICKER}, DATE={DATE}, LOOKBACK_DAYS=14
+
+O agente deve produzir para cada ticker:
+
 ```
-Think step by step. You are doing institutional-quality B3 analysis.
-
-Run from workspace root:
-bash run.sh scripts/fetch_stock.py {TICKER} {DATE}
-bash run.sh scripts/fetch_news.py {TICKER} {DATE} 14
-
-Read ALL data before drawing conclusions. Produce:
-
 TICKER: {TICKER}
 SCORE: X/6
 SIGNAL: STRONG BUY | BUY | HOLD | AVOID
 
-CHECKLIST (cite specific data evidence for each — criteria 1/2/3 are ELIMINATORY: fail = AVOID):
-1. [ELIMINATORY] Growing profits stair-step (no recurring losses, consistent long-term growth): ✅/⚠️/❌ — evidence: ...
-2. [ELIMINATORY] Liquid ON shares (ticker ending in 3, volume > R$10M/day; PN/Unit only = disqualified): ✅/⚠️/❌ — evidence: ...
-3. [ELIMINATORY] No recent IPO (5+ years of profit history on B3; recent IPO = disqualified): ✅/⚠️/❌ — evidence: ...
+CHECKLIST (cite specific data evidence — criteria 1/2/3 are ELIMINATORY: fail = AVOID):
+1. [ELIMINATORY] Growing profits stair-step: ✅/⚠️/❌ — evidence: ...
+2. [ELIMINATORY] Liquid ON shares (ticker ending in 3, vol > R$10M/day): ✅/⚠️/❌ — evidence: ...
+3. [ELIMINATORY] No recent IPO (5+ years of profit history): ✅/⚠️/❌ — evidence: ...
 4. Novo Mercado listing: ✅/⚠️/❌ — evidence: ...
 5. Tag Along 100%: ✅/⚠️/❌ — evidence: ...
-6. Controlled debt (D/EBITDA < 2x or net cash preferred): ✅/⚠️/❌ — evidence: ...
-7. Expected return > CDI (~14.75% a.a.) via earnings yield / DCF / DY: ✅/⚠️/❌ — evidence: ...
+6. Controlled debt (D/EBITDA < 2x or net cash): ✅/⚠️/❌ — evidence: ...
+7. Expected return > CDI (~14.75% a.a.): ✅/⚠️/❌ — evidence: ...
 
-KEY METRICS (exact values from data):
-- Price: R$ X | P/L TTM: X | Forward P/L: X
-- P/VP: X | DY: X% | ROE: X% | ROA: X%
-- Margins (gross/EBITDA/net): X% / X% / X%
-- Revenue YoY: X% | Net income YoY: X%
-- Net Debt/EBITDA: X (or net cash R$ X) | FCF yield: X%
-
-TECHNICAL (from indicators data):
-- Trend: price vs SMA50/SMA200 — above/below, golden/death cross
-- RSI14: X — oversold / neutral / overbought
-- MACD: bullish / bearish signal
-
-THESIS (specific, cite numbers): ...
-MAIN RISKS (specific, not generic): ...
-RED FLAGS (anything disqualifying): ...
-PRICE TARGET 12m (with method): R$ X via [P/L reversion / earnings yield / DCF]
-EXPECTED RETURN vs CDI (14.75%): X% — worthwhile: yes / marginal / no
+KEY METRICS: Price | P/L TTM | P/VP | DY | ROE | ROA | Margins | Revenue YoY | D/EBITDA | FCF yield
+TECHNICAL: Trend (SMA50/200) | RSI14 | MACD signal
+THESIS | MAIN RISKS | RED FLAGS | PRICE TARGET 12m | EXPECTED RETURN vs CDI
 ```
 
 ---

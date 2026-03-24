@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Setup
 
-`run.sh` is a venv-aware Python runner, not a setup script. It bootstraps `.venv` on first use and then executes any Python script inside it:
+`run.sh` is a venv-aware Python runner. It bootstraps `.venv` on first use, then executes any Python script inside it:
 
 ```bash
 bash run.sh scripts/fetch_stock.py WEGE3.SA 2026-03-24
@@ -12,7 +12,7 @@ bash run.sh scripts/fetch_macro.py 2026-03-24
 bash run.sh scripts/fetch_news.py WEGE3.SA 2026-03-24 14
 ```
 
-Always invoke scripts via `run.sh` from the workspace root — never activate the venv manually.
+Always invoke scripts via `run.sh` from the workspace root.
 
 ## Commands
 
@@ -25,35 +25,32 @@ Always invoke scripts via `run.sh` from the workspace root — never activate th
 
 ## Architecture
 
-### Data flow
-
 ```
-.claude/commands/        ← slash command definitions (multi-agent orchestration)
-    analyze.md           → spawns 3 parallel Task agents (stock + macro + news)
-    portfolio.md         → spawns N+1 parallel Task agents (1 per ticker + macro)
-    macro.md             → runs fetch_macro.py, produces report
+.claude/
+    commands/        ← slash command orchestration (/analyze, /portfolio, /macro, /b3profile)
+    agents/          ← registered subagents (stock-analyst, macro-analyst, news-analyst)
+    skills/          ← domain knowledge (b3-analysis: checklist, technicals, sector impacts)
 scripts/
-    fetch_stock.py       → calls dataflows/y_finance.py + stockstats_utils.py
-    fetch_macro.py       → calls dataflows/bcb_data.py + google_news_br.py
-    fetch_news.py        → calls dataflows/google_news_br.py
+    fetch_stock.py   → OHLCV + technicals + fundamentals (365 days)
+    fetch_macro.py   → BCB indicators + Selic history + macro news
+    fetch_news.py    → Google News RSS PT-BR by ticker + sector
 dataflows/
-    y_finance.py         → OHLCV, fundamentals, technicals via yfinance
-    bcb_data.py          → Selic/CDI/IPCA/BRL-USD from BCB API (no key needed)
-    google_news_br.py    → PT-BR news via Google News RSS (no key needed)
-    stockstats_utils.py  → RSI, MACD, Bollinger, SMA, ADX, ATR via stockstats
-    config.py            → cache path config (dataflows/data_cache/)
+    y_finance.py     → OHLCV, fundamentals, DRE, balance sheet, cash flow
+    bcb_data.py      → Selic, CDI, IPCA, IGP-M, BRL/USD via BCB public API
+    google_news_br.py → PT-BR financial news via Google News RSS
+    stockstats_utils.py → RSI, MACD, Bollinger, SMA, ADX, ATR
+    config.py        → cache dir (dataflows/data_cache/)
 ```
 
-### Multi-agent execution
+### Orchestration pattern: Command → Agent → Skill
 
-`/analyze` and `/portfolio` use Claude's Task tool to spawn parallel subagents. Each data agent runs a script and returns raw output. The main session synthesizes all results into a Portuguese report. Model assignment per agent type is controlled by the active profile.
+`/analyze` and `/portfolio` spawn the registered subagents (`stock-analyst`, `macro-analyst`, `news-analyst`) in parallel via the Task tool. Each agent runs a script and returns raw output. The main session synthesizes all results into a Portuguese report using the `b3-analysis` skill for methodology.
 
 ### Profile state
 
 Two files must stay in sync when changing profiles:
-
-- `.b3profile` — stores the profile name (`quality` / `balanced` / `budget`)
-- `.claude/settings.json` — stores `{ "model": "..." }` for the synthesis (main) model
+- `.b3profile` — profile name (`quality` / `balanced` / `budget`)
+- `.claude/settings.json` — `{ "model": "..." }` for the synthesis model
 
 The `/b3profile` command updates both atomically.
 
@@ -77,34 +74,30 @@ Default is `balanced`. For real investment decisions use `quality` + `/effort hi
 
 ## B3 Quality Checklist
 
-Criteria 1, 2, and 3 are **eliminatory** — fail any = automatic AVOID.
+<important if="analyzing any B3 stock or building a portfolio">
+Criteria 1, 2, and 3 are **eliminatory** — fail any one = automatic AVOID, no exceptions.
 
 | # | Criterion | Eliminatory |
 |---|---|---|
-| 1 | Consistent growing profits (escadinha, no recurring losses) | ✅ Yes |
-| 2 | Liquid ON shares (ticker ending in 3, vol > R$10M/day) | ✅ Yes |
-| 3 | No recent IPO (5+ years of profit history on B3) | ✅ Yes |
+| 1 | Consistent growing profits (escadinha, no recurring losses) | 🔴 YES |
+| 2 | Liquid ON shares (ticker ending in 3, vol > R$10M/day) | 🔴 YES |
+| 3 | No recent IPO (5+ years of profit history on B3) | 🔴 YES |
 | 4 | Novo Mercado listing | Partial |
 | 5 | Tag Along 100% | Partial |
 | 6 | Controlled debt (net cash or D/EBITDA < 2x) | Partial |
 | 7 | Expected return > CDI (~14.75% a.a.) | Partial |
 
-Score 6–7 = Strong Buy / Elite. Score ≤ 2 = Exclude from portfolio.
+Score 6–7 = Strong Buy. Score ≤ 2 = Exclude from portfolio entirely.
+</important>
 
-### Red flags
-- Ticker ending in 4/11 with no ON liquidity
-- Controlling shareholder holds only ON, forces investors into PN
-- Tag Along < 100%
-- Heavy state interference (pricing / dividend policy risk)
-- D/EBITDA > 3x
+Red flags: ticker 4/11 with no ON liquidity · controlling shareholder only in ON · Tag Along < 100% · state interference · D/EBITDA > 3x
 
 ## Macro context
 
 - **Selic meta**: ~14,75% a.a. (tightening cycle, 2025–2026)
 - **CDI** ≈ Selic − 0.10% a.a. — minimum return benchmark for equities
-- High Selic: favors insurance (float income), exporters (USD revenue); hurts retail, utilities, high-growth tech
-- BRL/USD: strong USD = positive for exporters, negative for importers
+- High Selic: favors insurance and exporters; hurts retail, utilities, high-growth tech
 
 ## Report language
 
-All analysis reports must be written in **Portuguese (Brazil)**. Only code, scripts, and this file are in English.
+All analysis reports must be written in **Portuguese (Brazil)**. Code, scripts, and this file are in English.

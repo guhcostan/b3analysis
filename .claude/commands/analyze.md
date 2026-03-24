@@ -56,23 +56,16 @@ Use `claude --model {MODEL} -p "..."` as bash for data agents when model differs
 
 ## Step 2 — Spawnar 3 agentes em paralelo com a Task tool
 
-**Agente 1: Dados da Ação**
-```
-Run from workspace root and return the complete raw output without summarizing:
-bash run.sh scripts/fetch_stock.py {TICKER} {DATE}
-```
+Use os subagentes registrados em `.claude/agents/`:
 
-**Agente 2: Contexto Macro**
-```
-Run from workspace root and return the complete raw output without summarizing:
-bash run.sh scripts/fetch_macro.py {DATE}
-```
+**Agente 1: `stock-analyst`**
+Invoke with: TICKER={TICKER}, DATE={DATE}
 
-**Agente 3: Notícias**
-```
-Run from workspace root and return the complete raw output without summarizing:
-bash run.sh scripts/fetch_news.py {TICKER} {DATE} 21
-```
+**Agente 2: `macro-analyst`**
+Invoke with: DATE={DATE}
+
+**Agente 3: `news-analyst`**
+Invoke with: TICKER={TICKER}, DATE={DATE}, LOOKBACK_DAYS=21
 
 ---
 

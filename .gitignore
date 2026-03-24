@@ -12,9 +12,8 @@ build/
 # Cache de dados (CSVs baixados pelo yfinance)
 dataflows/data_cache/
 
-# Preferências locais
+# Preferências locais (não versionar — específico por usuário)
 .b3profile
-.claude/settings.json
 .claude/settings.local.json
 
 # macOS
