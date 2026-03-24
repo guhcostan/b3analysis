@@ -1,24 +1,44 @@
 # /analyze
 
-Perform a complete investment analysis for a B3 stock using parallel subagents.
-
-**Usage:** `/analyze $ARGUMENTS`
-
-Examples:
-- `/analyze WEGE3.SA`
-- `/analyze WEGE3.SA 2026-03-24`
-
-> **Maximum quality mode:** Before running, set `/effort high` in Claude Code to enable extended thinking on the synthesis step.
+Análise completa de uma ação da B3 usando subagentes em paralelo.
 
 ---
 
-## Execution — Multi-Agent Architecture
+## Step 0 — Coletar parâmetros via perguntas
 
-Parse `$ARGUMENTS`:
-- `TICKER` — required (add `.SA` if missing for B3 tickers)
-- `DATE` — optional, defaults to today (`YYYY-MM-DD`)
+Parse `$ARGUMENTS`. Para cada parâmetro ausente, use `AskUserQuestion`.
 
-### Step 0 — Read active profile
+### 0a — Ticker
+
+Se `$ARGUMENTS` não contém um ticker, pergunte:
+
+```
+AskUserQuestion(
+  question: "Qual ação você quer analisar? Digite o ticker da B3 (ex: WEGE3, ITUB3, VALE3):"
+)
+```
+
+Normalize a resposta: adicione `.SA` se não tiver (ex: `WEGE3` → `WEGE3.SA`).
+
+### 0b — Data de referência
+
+Se `$ARGUMENTS` não contém uma data (`YYYY-MM-DD`), pergunte:
+
+```
+AskUserQuestion(
+  question: "Qual a data de referência para a análise?",
+  options: [
+    "Hoje ({TODAY})",
+    "Outra data (eu vou digitar no formato YYYY-MM-DD)"
+  ]
+)
+```
+
+Se escolher "Hoje", use a data atual. Se escolher "Outra data", aguarde o input.
+
+---
+
+## Step 1 — Ler perfil ativo
 
 ```bash
 cat .b3profile 2>/dev/null || echo "balanced"
@@ -32,27 +52,31 @@ cat .b3profile 2>/dev/null || echo "balanced"
 
 Use `claude --model {MODEL} -p "..."` as bash for data agents when model differs from session.
 
-### Step 1 — Spawn 3 agents in parallel using the Task tool
+---
 
-**Agent 1: Stock Data**
+## Step 2 — Spawnar 3 agentes em paralelo com a Task tool
+
+**Agente 1: Dados da Ação**
 ```
 Run from workspace root and return the complete raw output without summarizing:
 bash run.sh scripts/fetch_stock.py {TICKER} {DATE}
 ```
 
-**Agent 2: Macro Context**
+**Agente 2: Contexto Macro**
 ```
 Run from workspace root and return the complete raw output without summarizing:
 bash run.sh scripts/fetch_macro.py {DATE}
 ```
 
-**Agent 3: News**
+**Agente 3: Notícias**
 ```
 Run from workspace root and return the complete raw output without summarizing:
 bash run.sh scripts/fetch_news.py {TICKER} {DATE} 21
 ```
 
-### Step 2 — Deep synthesis
+---
+
+## Step 3 — Síntese profunda
 
 Think step by step. Re-read all data carefully before writing any conclusion. Challenge your own assumptions — if a metric looks unusually good or bad, verify it against other data points. Be specific: cite actual numbers, dates, and comparisons. Avoid generic statements.
 

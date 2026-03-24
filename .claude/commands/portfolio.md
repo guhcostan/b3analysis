@@ -1,15 +1,68 @@
 # /portfolio
 
-Build a diversified B3 investment portfolio using parallel subagents — one per ticker.
+Monta uma carteira diversificada na B3 usando subagentes em paralelo — um por ticker.
 
-**Usage:** `/portfolio $ARGUMENTS`
+---
 
-Examples:
-- `/portfolio`
-- `/portfolio elite`
-- `/portfolio elite 10000`
-- `/portfolio blue-chips 50000`
-- `/portfolio WEGE3.SA,ITUB3.SA,VALE3.SA 25000`
+## Step 0 — Coletar parâmetros via perguntas
+
+Parse `$ARGUMENTS`. Para cada parâmetro ausente, use `AskUserQuestion` para perguntar ao usuário.
+
+### 0a — Preset ou tickers
+
+Se `$ARGUMENTS` não contém preset nem lista de tickers, pergunte:
+
+```
+AskUserQuestion(
+  question: "Qual carteira você quer analisar?",
+  options: [
+    "elite — WEGE3, ITUB3, BBAS3, RADL3, LREN3, EQTL3, RENT3, PSSA3, FLRY3, TOTS3",
+    "elite-plus — elite + BBSE3, SAPR3",
+    "blue-chips — PETR4, VALE3, ITUB4, BBDC4, ABEV3, WEGE3, RENT3, SUZB3, EQTL3, BBAS3",
+    "Tickers customizados (eu vou digitar)"
+  ]
+)
+```
+
+Se o usuário escolher "Tickers customizados", pergunte em seguida:
+
+```
+AskUserQuestion(
+  question: "Digite os tickers separados por vírgula (ex: WEGE3.SA, VALE3.SA, ITUB3.SA):"
+)
+```
+
+### 0b — Capital disponível
+
+Se `$ARGUMENTS` não contém um valor numérico, pergunte:
+
+```
+AskUserQuestion(
+  question: "Qual o valor total disponível para investir? (ex: 10000, 50000, 100000)"
+)
+```
+
+Interprete a resposta como BRL. Se não informado, use R$ 10.000.
+
+### 0c — Data de referência (opcional)
+
+Se `$ARGUMENTS` não contém uma data (`YYYY-MM-DD`), use a data de hoje. Não pergunte — só pergunte se o usuário explicitamente quiser analisar uma data específica no passado.
+
+---
+
+## Step 1 — Ler perfil ativo
+
+```bash
+cat .b3profile 2>/dev/null || echo "balanced"
+```
+
+| Profile | Ticker agents model | Macro agent model |
+|---|---|---|
+| `quality` | `claude-opus-4-6` | `claude-sonnet-4-6` |
+| `balanced` | `claude-sonnet-4-6` | `claude-haiku-4-5` |
+| `budget` | `claude-haiku-4-5` | `claude-haiku-4-5` |
+
+A síntese (Step 2) sempre usa o modelo da sessão principal (definido pelo `/b3profile`).
 
 ---
 
@@ -21,35 +74,15 @@ Examples:
 | `elite-plus` | All `elite` + BBSE3.SA, SAPR3.SA |
 | `blue-chips` | PETR4.SA, VALE3.SA, ITUB4.SA, BBDC4.SA, ABEV3.SA, WEGE3.SA, RENT3.SA, SUZB3.SA, EQTL3.SA, BBAS3.SA |
 
-If no preset or tickers are provided, use `elite` as default.
+---
+
+## Step 2 — Spawnar todos os agentes em paralelo com a Task tool
+
+Com os parâmetros coletados (TICKERS, CAPITAL, DATE), lance todos os agentes simultaneamente.
 
 ---
 
-## Step 0 — Read active profile
-
-```bash
-cat .b3profile 2>/dev/null || echo "balanced"
-```
-
-Based on the profile, assign models:
-
-| Profile | Ticker agents model | Macro agent model |
-|---|---|---|
-| `quality` | `claude-opus-4-6` | `claude-sonnet-4-6` |
-| `balanced` | `claude-sonnet-4-6` | `claude-haiku-4-5` |
-| `budget` | `claude-haiku-4-5` | `claude-haiku-4-5` |
-
-The synthesis step (Step 2) always uses the main session model (set by `/b3profile`).
-
----
-
-## Step 1 — Spawn all agents in parallel using the Task tool
-
-Parse `$ARGUMENTS` to extract PRESET/TICKERS and CAPITAL (default R$ 10.000). Then launch all agents simultaneously.
-
----
-
-### Macro agent
+### Agente macro
 Model: per profile table above (use `claude --model {MACRO_MODEL} -p "..."` as bash if model differs from session)
 
 Prompt:
@@ -71,7 +104,7 @@ Analyze the output and write a macro summary covering:
 
 ---
 
-### One ticker agent per ticker
+### Um agente por ticker
 Model: per profile table above (use `claude --model {TICKER_MODEL} -p "..."` as bash if model differs from session)
 
 Prompt per TICKER:
@@ -118,7 +151,7 @@ EXPECTED RETURN vs CDI (14.75%): X% — worthwhile: yes / marginal / no
 
 ---
 
-## Step 2 — Deep synthesis (main model)
+## Step 3 — Síntese profunda (modelo principal)
 
 Think step by step. Re-read every individual analysis and the macro summary before writing. Challenge any conclusion that lacks numerical backing. Be specific.
 

@@ -1,27 +1,36 @@
 # /macro
 
-Fetch and interpret the current Brazilian macroeconomic snapshot.
-
-**Usage:** `/macro $ARGUMENTS`
-
-Examples:
-- `/macro`
-- `/macro 2026-03-24`
+Busca e interpreta o snapshot macroeconômico brasileiro atual.
 
 ---
 
-## Instructions
+## Step 0 — Coletar parâmetros via perguntas
 
-Parse `$ARGUMENTS`:
-- `DATE` — optional, defaults to today's date in `YYYY-MM-DD` format
+Parse `$ARGUMENTS`. Se nenhuma data foi fornecida, pergunte:
 
-Run:
+```
+AskUserQuestion(
+  question: "Qual a data de referência para o snapshot macro?",
+  options: [
+    "Hoje ({TODAY})",
+    "Outra data (eu vou digitar no formato YYYY-MM-DD)"
+  ]
+)
+```
+
+Se escolher "Hoje", use a data atual. Se escolher "Outra data", aguarde o input.
+
+---
+
+## Step 1 — Executar
 
 ```bash
 bash run.sh scripts/fetch_macro.py {DATE}
 ```
 
-After collecting the data, produce a **macro analysis report in Portuguese** with:
+---
+
+## Step 2 — Produzir relatório macro em português
 
 ---
 
