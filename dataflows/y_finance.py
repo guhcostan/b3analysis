@@ -3,6 +3,7 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import yfinance as yf
 import os
+import time
 from .stockstats_utils import StockstatsUtils, _clean_dataframe, yf_retry
 
 def get_YFin_data_online(
@@ -232,6 +233,10 @@ def _get_stock_stats_bulk(
         )
 
         if os.path.exists(data_file):
+            if (time.time() - os.path.getmtime(data_file)) / 3600 > 24:
+                os.remove(data_file)
+
+        if os.path.exists(data_file):
             data = pd.read_csv(data_file, on_bad_lines="skip")
         else:
             data = yf_retry(lambda: yf.download(
@@ -330,7 +335,7 @@ def get_fundamentals(
             ("Operating Margin", info.get("operatingMargins")),
             ("Return on Equity", info.get("returnOnEquity")),
             ("Return on Assets", info.get("returnOnAssets")),
-            ("Debt to Equity", info.get("debtToEquity")),
+            ("Debt to Equity (D/E — não é D/EBITDA)", info.get("debtToEquity")),
             ("Current Ratio", info.get("currentRatio")),
             ("Book Value", info.get("bookValue")),
             ("Free Cash Flow", info.get("freeCashflow")),
@@ -340,6 +345,11 @@ def get_fundamentals(
         for label, value in fields:
             if value is not None:
                 lines.append(f"{label}: {value}")
+
+        total_debt = info.get("totalDebt")
+        ebitda = info.get("ebitda")
+        if total_debt is not None and ebitda is not None and ebitda != 0:
+            lines.append(f"D/EBITDA (calculado): {round(total_debt / ebitda, 2)}")
 
         header = f"# Company Fundamentals for {ticker.upper()}\n"
         header += f"# Data retrieved on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n"

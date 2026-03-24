@@ -2,7 +2,13 @@
 
 ![B3Analysis](docs/banner.png)
 
-Agente de análise de ações brasileiras (B3) usando Claude Code. Sem API keys — todos os dados vêm de fontes públicas (yfinance, BCB, Google News RSS).
+![Agent Swarm](https://img.shields.io/badge/Agent%20Swarm-9%20agentes-blueviolet?style=flat-square)
+![Multi-Agent](https://img.shields.io/badge/Multi--Agent-Teams-blue?style=flat-square)
+![B3 Brasil](https://img.shields.io/badge/B3-%F0%9F%87%A7%F0%9F%87%B7-009c3b?style=flat-square)
+![No API Key](https://img.shields.io/badge/Dados-Sem%20API%20Key-success?style=flat-square)
+![Claude Code](https://img.shields.io/badge/Claude%20Code-claude--sonnet--4--6-orange?style=flat-square)
+
+Análise de ações brasileiras (B3) com **agent swarm** — equipes de agentes especializados em paralelo usando Claude Code. Sem API keys: todos os dados vêm de fontes públicas (yfinance, BCB, Google News RSS).
 
 ---
 
@@ -12,7 +18,10 @@ Agente de análise de ações brasileiras (B3) usando Claude Code. Sem API keys 
 git clone https://github.com/guhcostan/b3analysis.git
 cd b3analysis
 
-# Análise de uma ação
+# Ultra-análise com swarm de 9 agentes
+/swarm WEGE3.SA
+
+# Análise completa (3 agentes)
 /analyze WEGE3.SA
 
 # Carteira diversificada
@@ -30,6 +39,7 @@ O ambiente Python (`.venv`) é criado automaticamente na primeira execução. Ne
 
 | Comando | Exemplo | Descrição |
 |---|---|---|
+| `/swarm` | `/swarm WEGE3.SA` | Ultra-análise com 9 agentes especializados em paralelo |
 | `/analyze` | `/analyze WEGE3.SA 2026-03-24` | Análise completa com técnica, fundamentos e macro |
 | `/portfolio` | `/portfolio elite 10000` | Carteira com alocação otimizada por conviction |
 | `/macro` | `/macro` | Painel de indicadores BCB + notícias macro |
@@ -84,13 +94,76 @@ Baseada na tier list B3 do Logan. Os critérios 1, 2 e 3 são **eliminatórios**
 
 ---
 
+## Agent Teams & Swarm Architecture
+
+O B3Analysis é construído em 3 camadas de **parallel agent dispatch**:
+
+### Camada 1 — Agentes de dados (coleta paralela)
+
+Cada agente busca uma fonte de dados independente e retorna output bruto:
+
+```
+stock-analyst    → yfinance: OHLCV + técnicos + fundamentos
+macro-analyst    → BCB API: Selic, CDI, IPCA, câmbio, fiscal
+news-analyst     → Google News RSS: notícias PT-BR por ticker/setor
+```
+
+### Camada 2 — Swarm analítico (6 micro-especialistas em paralelo)
+
+O `/swarm` passa os dados brutos para 6 agentes analíticos simultaneamente. Cada um tem um mandato restrito e produz um sinal independente:
+
+```
+/swarm WEGE3.SA
+       │
+       ├─▶ [stock-analyst]    fetch_stock.py ──────────────┐
+       ├─▶ [macro-analyst]    fetch_macro.py ──────────────┤ RAW DATA
+       └─▶ [news-analyst]     fetch_news.py 30d ───────────┘
+                                                            │
+           ┌────────────────────────────────────────────────▼───────────────────┐
+           │                  AGENT SWARM (6 em paralelo)                       │
+           ├──────────────────────────┬─────────────────────────────────────────┤
+           │  fundamental-analyst     │  technical-analyst                      │
+           │  ↳ escadinha, D/EBITDA   │  ↳ SMA/RSI/MACD/Bollinger/ADX          │
+           ├──────────────────────────┼─────────────────────────────────────────┤
+           │  macro-correlation       │  news-sentiment-analyst                 │
+           │  ↳ Selic/BRL/IPCA impact │  ↳ score -5..+5, catalisadores          │
+           ├──────────────────────────┼─────────────────────────────────────────┤
+           │  governance-analyst      │  peer-comparison-analyst                │
+           │  ↳ ON/tag along/NM/estado│  ↳ prêmio/desconto vs pares B3          │
+           └──────────────────────────┴─────────────────────────────────────────┘
+                                                            │
+                                           Síntese: painel 6 agentes
+                                           + critérios eliminatórios
+                                           + veredicto + preço-alvo vs CDI
+```
+
+### Camada 3 — Síntese (modelo principal)
+
+O modelo da sessão principal integra os outputs do swarm, verifica os critérios eliminatórios, resolve divergências entre agentes e produz o relatório final em PT-BR.
+
+---
+
 ## Arquitetura
 
 ```
-.claude/commands/        ← Definições dos slash commands (orquestração multi-agente)
-    analyze.md           → Spawna 3 agentes em paralelo (ação + macro + notícias)
-    portfolio.md         → Spawna N+1 agentes (1 por ticker + macro)
-    macro.md             → Executa fetch_macro.py e produz relatório
+.claude/
+    commands/            ← Slash commands (orquestração de agent teams)
+        swarm.md         → Despacha 9 agentes em paralelo (flagship)
+        analyze.md       → 3 agentes em paralelo (ação + macro + notícias)
+        portfolio.md     → N+1 agentes (1 por ticker + macro)
+        macro.md         → Snapshot macroeconômico BCB
+    agents/              ← Agentes registrados com mandatos específicos
+        stock-analyst    → Coleta: OHLCV + técnicos + fundamentos
+        macro-analyst    → Coleta: indicadores BCB
+        news-analyst     → Coleta: notícias PT-BR RSS
+        fundamental-analyst     → Análise: lucros, margens, D/EBITDA, FCF
+        technical-analyst       → Análise: SMA, RSI, MACD, Bollinger, ADX
+        macro-correlation       → Análise: impacto Selic/BRL/IPCA no setor
+        news-sentiment-analyst  → Análise: sentimento, catalisadores, riscos
+        governance-analyst      → Análise: ON/liquidez, tag along, Novo Mercado
+        peer-comparison-analyst → Análise: posicionamento vs pares
+    hooks/               ← Hooks Claude Code (validação + detecção de erros)
+    skills/b3-analysis/  ← Conhecimento de domínio (checklist, técnicos, setores)
 
 scripts/
     fetch_stock.py       → OHLCV + técnicos + fundamentos (365 dias)

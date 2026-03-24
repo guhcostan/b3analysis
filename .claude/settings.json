@@ -6,5 +6,29 @@
       "Bash(cat .b3profile*)",
       "Bash(echo * > .b3profile)"
     ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/validate_run_args.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash .claude/hooks/detect_errors.sh"
+          }
+        ]
+      }
+    ]
   }
 }

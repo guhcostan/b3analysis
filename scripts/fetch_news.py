@@ -2,10 +2,25 @@
 """Fetch Brazilian financial news for a given ticker (Google News PT-BR RSS)."""
 
 import sys
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+
+def _validate_ticker(ticker):
+    if not re.match(r'^[A-Z]{4}\d{1,2}(\.SA)?$', ticker):
+        print(f"Erro: ticker '{ticker}' inválido. Formato: WEGE3 ou WEGE3.SA", file=sys.stderr)
+        sys.exit(1)
+
+
+def _validate_date(date_str):
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        print(f"Erro: data '{date_str}' inválida. Formato: YYYY-MM-DD", file=sys.stderr)
+        sys.exit(1)
 
 from dataflows.google_news_br import get_news_google_br, get_sector_news_br
 
@@ -37,6 +52,8 @@ def main():
 
     ticker = sys.argv[1].upper()
     date_str = sys.argv[2] if len(sys.argv) > 2 else datetime.today().strftime("%Y-%m-%d")
+    _validate_ticker(ticker)
+    _validate_date(date_str)
     lookback = int(sys.argv[3]) if len(sys.argv) > 3 else 14
 
     base_ticker = ticker.replace(".SA", "")

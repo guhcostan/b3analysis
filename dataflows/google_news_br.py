@@ -29,6 +29,7 @@ _BR_SECTOR_QUERIES = {
     "imobiliario": "FII fundo imobiliário CSHG construção civil Brasil B3",
     "saude": "Hapvida Rede D'Or saúde hospitais farmácias Brasil B3",
     "tecnologia": "TOTVS LWSA tecnologia TI startups Brasil B3",
+    "saneamento": "Sanepar Sabesp saneamento básico água esgoto Brasil B3",
 }
 
 
@@ -153,6 +154,12 @@ def get_news_google_br(
         "CSNA3": "CSN",
         "LREN3": "Lojas Renner",
         "HAPV3": "Hapvida",
+        "RADL3": "Raia Drogasil",
+        "TOTS3": "TOTVS",
+        "PSSA3": "Porto Seguro",
+        "FLRY3": "Fleury",
+        "BBSE3": "BB Seguridade",
+        "SAPR3": "Sanepar",
     }
 
     company_name = company_map.get(clean_ticker, clean_ticker)

@@ -1,5 +1,6 @@
 """Banco Central do Brasil (BCB) open data API integration."""
 
+import sys
 import requests
 from datetime import datetime, timedelta
 from typing import Optional
@@ -40,7 +41,8 @@ def _fetch_series(code: int, n_last: int = 10) -> list[dict]:
         resp = requests.get(url, timeout=10)
         resp.raise_for_status()
         return resp.json()
-    except Exception:
+    except Exception as e:
+        print(f"[BCB] Aviso: falha ao buscar série {code}: {e}", file=sys.stderr)
         return []
 
 
@@ -53,7 +55,8 @@ def _fetch_series_range(code: int, start_date: str, end_date: str) -> list[dict]
         resp.raise_for_status()
         data = resp.json()
         return data if isinstance(data, list) else []
-    except Exception:
+    except Exception as e:
+        print(f"[BCB] Aviso: falha ao buscar série {code}: {e}", file=sys.stderr)
         return []
 
 

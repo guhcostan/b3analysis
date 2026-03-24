@@ -2,10 +2,25 @@
 """Fetch stock data (OHLCV + technicals + fundamentals) for a B3 ticker."""
 
 import sys
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+
+def _validate_ticker(ticker):
+    if not re.match(r'^[A-Z]{4}\d{1,2}(\.SA)?$', ticker):
+        print(f"Erro: ticker '{ticker}' inválido. Formato: WEGE3 ou WEGE3.SA", file=sys.stderr)
+        sys.exit(1)
+
+
+def _validate_date(date_str):
+    try:
+        datetime.strptime(date_str, "%Y-%m-%d")
+    except ValueError:
+        print(f"Erro: data '{date_str}' inválida. Formato: YYYY-MM-DD", file=sys.stderr)
+        sys.exit(1)
 
 from dataflows.y_finance import (
     get_YFin_data_online,
@@ -24,6 +39,8 @@ def main():
 
     ticker = sys.argv[1].upper()
     date_str = sys.argv[2] if len(sys.argv) > 2 else datetime.today().strftime("%Y-%m-%d")
+    _validate_ticker(ticker)
+    _validate_date(date_str)
     curr_date = datetime.strptime(date_str, "%Y-%m-%d")
     start_date = (curr_date - timedelta(days=365)).strftime("%Y-%m-%d")
 

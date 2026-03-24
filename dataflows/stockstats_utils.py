@@ -74,6 +74,10 @@ class StockstatsUtils:
         )
 
         if os.path.exists(data_file):
+            if (time.time() - os.path.getmtime(data_file)) / 3600 > 24:
+                os.remove(data_file)
+
+        if os.path.exists(data_file):
             data = pd.read_csv(data_file, on_bad_lines="skip")
         else:
             data = yf_retry(lambda: yf.download(
