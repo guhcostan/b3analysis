@@ -18,11 +18,11 @@ Always invoke scripts via `run.sh` from the workspace root.
 
 | Command | Usage | Description |
 |---|---|---|
-| `/swarm` | `/swarm WEGE3.SA` | Ultra-análise com 12 agentes em 3 ondas (buy-side process) |
-| `/analyze` | `/analyze WEGE3.SA [2026-03-24]` | Full single-stock analysis (3 agents) |
-| `/portfolio` | `/portfolio elite 10000` | Diversified portfolio builder |
-| `/macro` | `/macro` | BR macroeconomic snapshot |
-| `/b3profile` | `/b3profile quality` | Switch analysis model profile |
+| `/b3:swarm` | `/b3:swarm WEGE3.SA` | Ultra-análise com 12 agentes em 3 ondas (buy-side process) |
+| `/b3:analyze` | `/b3:analyze WEGE3.SA [2026-03-24]` | Full single-stock analysis (3 agents) |
+| `/b3:portfolio` | `/b3:portfolio elite 10000` | Diversified portfolio builder |
+| `/b3:macro` | `/b3:macro` | BR macroeconomic snapshot |
+| `/b3:profile` | `/b3:profile quality` | Switch analysis model profile |
 
 ## Architecture
 
@@ -67,7 +67,7 @@ dataflows/
 
 ### Orchestration pattern: Command → Agent → Skill
 
-`/analyze` and `/portfolio` spawn data agents (`stock-analyst`, `macro-analyst`, `news-analyst`) in parallel via the Task tool. `/swarm` runs all 3 tiers sequentially (data → analysis → challenge). The main session synthesizes using the `b3-analysis` skill for methodology.
+`/b3:analyze` and `/b3:portfolio` spawn data agents (`stock-analyst`, `macro-analyst`, `news-analyst`) in parallel via the Task tool. `/b3:swarm` runs all 3 tiers sequentially (data → analysis → challenge). The main session synthesizes using the `b3-analysis` skill for methodology.
 
 ### Profile state
 
@@ -75,7 +75,7 @@ Two files must stay in sync when changing profiles:
 - `.b3profile` — profile name (`quality` / `balanced` / `budget`)
 - `.claude/settings.json` — `{ "model": "..." }` for the synthesis model
 
-The `/b3profile` command updates both atomically.
+The `/b3:profile` command updates both atomically.
 
 ## Analysis profiles
 

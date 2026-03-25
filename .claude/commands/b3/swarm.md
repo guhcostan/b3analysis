@@ -1,4 +1,4 @@
-# /swarm
+# /b3:swarm
 
 Ultra-análise de uma ação B3 com 12 agentes em 3 ondas sequenciais — espelhando o processo de uma gestora buy-side profissional: coleta → análise especializada → revisão adversarial → decisão.
 

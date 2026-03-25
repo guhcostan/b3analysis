@@ -1,4 +1,4 @@
-# /macro
+# /b3:macro
 
 Busca e interpreta o snapshot macroeconômico brasileiro atual.
 

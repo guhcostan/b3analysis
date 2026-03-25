@@ -1,4 +1,4 @@
-# /analyze
+# /b3:analyze
 
 Análise completa de uma ação da B3 usando subagentes em paralelo.
 

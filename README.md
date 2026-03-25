@@ -2,7 +2,7 @@
 
 ![B3Analysis](docs/banner.png)
 
-![Agent Swarm](https://img.shields.io/badge/Agent%20Swarm-9%20agentes-blueviolet?style=flat-square)
+![Agent Swarm](https://img.shields.io/badge/Agent%20Swarm-12%20agentes-blueviolet?style=flat-square)
 ![Multi-Agent](https://img.shields.io/badge/Multi--Agent-Teams-blue?style=flat-square)
 ![B3 Brasil](https://img.shields.io/badge/B3-%F0%9F%87%A7%F0%9F%87%B7-009c3b?style=flat-square)
 ![No API Key](https://img.shields.io/badge/Dados-Sem%20API%20Key-success?style=flat-square)
@@ -19,16 +19,16 @@ git clone https://github.com/guhcostan/b3analysis.git
 cd b3analysis
 
 # Ultra-análise com swarm de 9 agentes
-/swarm WEGE3.SA
+/b3:swarm WEGE3.SA
 
 # Análise completa (3 agentes)
-/analyze WEGE3.SA
+/b3:analyze WEGE3.SA
 
 # Carteira diversificada
-/portfolio elite 10000
+/b3:portfolio elite 10000
 
 # Snapshot macro
-/macro
+/b3:macro
 ```
 
 O ambiente Python (`.venv`) é criado automaticamente na primeira execução. Nenhum setup manual necessário.
@@ -39,11 +39,11 @@ O ambiente Python (`.venv`) é criado automaticamente na primeira execução. Ne
 
 | Comando | Exemplo | Descrição |
 |---|---|---|
-| `/swarm` | `/swarm WEGE3.SA` | Ultra-análise com 9 agentes especializados em paralelo |
-| `/analyze` | `/analyze WEGE3.SA 2026-03-24` | Análise completa com técnica, fundamentos e macro |
-| `/portfolio` | `/portfolio elite 10000` | Carteira com alocação otimizada por conviction |
-| `/macro` | `/macro` | Painel de indicadores BCB + notícias macro |
-| `/b3profile` | `/b3profile quality` | Troca o perfil de qualidade/custo dos agentes |
+| `/b3:swarm` | `/b3:swarm WEGE3.SA` | Ultra-análise com 12 agentes em 3 ondas (processo buy-side) |
+| `/b3:analyze` | `/b3:analyze WEGE3.SA 2026-03-24` | Análise completa com técnica, fundamentos e macro |
+| `/b3:portfolio` | `/b3:portfolio elite 10000` | Carteira com alocação otimizada por conviction |
+| `/b3:macro` | `/b3:macro` | Painel de indicadores BCB + notícias macro |
+| `/b3:profile` | `/b3:profile quality` | Troca o perfil de qualidade/custo dos agentes |
 
 ### Presets de carteiras
 
@@ -57,7 +57,7 @@ O ambiente Python (`.venv`) é criado automaticamente na primeira execução. Ne
 
 ## Perfis de análise
 
-Controla qual modelo Claude usa por tipo de agente. Troque com `/b3profile`.
+Controla qual modelo Claude usa por tipo de agente. Troque com `/b3:profile`.
 
 | Perfil | Síntese | Agentes ticker | Agente macro | Quando usar |
 |---|---|---|---|---|
@@ -108,38 +108,42 @@ macro-analyst    → BCB API: Selic, CDI, IPCA, câmbio, fiscal
 news-analyst     → Google News RSS: notícias PT-BR por ticker/setor
 ```
 
-### Camada 2 — Swarm analítico (6 micro-especialistas em paralelo)
+### Camada 2 — Swarm analítico (7 especialistas em paralelo)
 
-O `/swarm` passa os dados brutos para 6 agentes analíticos simultaneamente. Cada um tem um mandato restrito e produz um sinal independente:
+O `/b3:swarm` passa os dados brutos para 7 agentes analíticos simultaneamente, cada um com mandato restrito inspirado em papéis reais de gestoras buy-side:
 
 ```
-/swarm WEGE3.SA
+/b3:swarm WEGE3.SA
        │
        ├─▶ [stock-analyst]    fetch_stock.py ──────────────┐
        ├─▶ [macro-analyst]    fetch_macro.py ──────────────┤ RAW DATA
        └─▶ [news-analyst]     fetch_news.py 30d ───────────┘
                                                             │
            ┌────────────────────────────────────────────────▼───────────────────┐
-           │                  AGENT SWARM (6 em paralelo)                       │
+           │               AGENT SWARM (7 em paralelo)                          │
            ├──────────────────────────┬─────────────────────────────────────────┤
-           │  fundamental-analyst     │  technical-analyst                      │
-           │  ↳ escadinha, D/EBITDA   │  ↳ SMA/RSI/MACD/Bollinger/ADX          │
+           │  business-analyst        │  financial-analyst                      │
+           │  ↳ moat, gestão, setor   │  ↳ escadinha, margens, ROE, FCF         │
            ├──────────────────────────┼─────────────────────────────────────────┤
-           │  macro-correlation       │  news-sentiment-analyst                 │
-           │  ↳ Selic/BRL/IPCA impact │  ↳ score -5..+5, catalisadores          │
+           │  credit-analyst          │  valuation-analyst                      │
+           │  ↳ D/EBITDA, stress test │  ↳ E/P vs CDI, múltiplos, preço-alvo    │
            ├──────────────────────────┼─────────────────────────────────────────┤
-           │  governance-analyst      │  peer-comparison-analyst                │
-           │  ↳ ON/tag along/NM/estado│  ↳ prêmio/desconto vs pares B3          │
-           └──────────────────────────┴─────────────────────────────────────────┘
+           │  technical-analyst       │  macro-correlation-analyst              │
+           │  ↳ SMA/RSI/MACD/ADX      │  ↳ Selic/BRL/IPCA impact no setor       │
+           ├──────────────────────────┴─────────────────────────────────────────┤
+           │  governance-analyst                                                 │
+           │  ↳ ON/liquidez (critério 2), tag along, Novo Mercado, risco estatal │
+           └────────────────────────────────────────────────────────────────────┘
                                                             │
-                                           Síntese: painel 6 agentes
-                                           + critérios eliminatórios
-                                           + veredicto + preço-alvo vs CDI
+                                           ▼ Onda 3 (sequencial)
+                                       bear-analyst
+                                       ↳ ataca as 3 hipóteses mais fracas
+                                       ↳ propõe cenário pessimista + preço-alvo bear
 ```
 
-### Camada 3 — Síntese (modelo principal)
+### Camada 3 — Devil's advocate + Síntese (modelo principal)
 
-O modelo da sessão principal integra os outputs do swarm, verifica os critérios eliminatórios, resolve divergências entre agentes e produz o relatório final em PT-BR.
+O `bear-analyst` lê todos os 7 outputs e sistematicamente desafia o bull case antes da síntese. O modelo da sessão principal age como portfolio manager: pesa bull vs bear, verifica os critérios eliminatórios e produz o relatório final em PT-BR com veredicto e gestão de risco.
 
 ---
 
@@ -147,21 +151,27 @@ O modelo da sessão principal integra os outputs do swarm, verifica os critério
 
 ```
 .claude/
-    commands/            ← Slash commands (orquestração de agent teams)
-        swarm.md         → Despacha 9 agentes em paralelo (flagship)
-        analyze.md       → 3 agentes em paralelo (ação + macro + notícias)
-        portfolio.md     → N+1 agentes (1 por ticker + macro)
-        macro.md         → Snapshot macroeconômico BCB
-    agents/              ← Agentes registrados com mandatos específicos
+    commands/b3/         ← Slash commands /b3:* (orquestração de agent teams)
+        swarm.md         → /b3:swarm — 12 agentes em 3 ondas (flagship)
+        analyze.md       → /b3:analyze — 3 agentes em paralelo (ação + macro + notícias)
+        portfolio.md     → /b3:portfolio — N+1 agentes (1 por ticker + macro)
+        macro.md         → /b3:macro — Snapshot macroeconômico BCB
+        profile.md       → /b3:profile — Troca o perfil de modelo
+    agents/              ← 12 agentes registrados em 3 tiers
+        [Tier 1 — dados]
         stock-analyst    → Coleta: OHLCV + técnicos + fundamentos
         macro-analyst    → Coleta: indicadores BCB
         news-analyst     → Coleta: notícias PT-BR RSS
-        fundamental-analyst     → Análise: lucros, margens, D/EBITDA, FCF
-        technical-analyst       → Análise: SMA, RSI, MACD, Bollinger, ADX
-        macro-correlation       → Análise: impacto Selic/BRL/IPCA no setor
-        news-sentiment-analyst  → Análise: sentimento, catalisadores, riscos
-        governance-analyst      → Análise: ON/liquidez, tag along, Novo Mercado
-        peer-comparison-analyst → Análise: posicionamento vs pares
+        [Tier 2 — análise especializada, 7 em paralelo]
+        business-analyst        → Moat, gestão, dinâmicas do setor
+        financial-analyst       → Escadinha, margens, ROE, FCF (critérios 1+3)
+        credit-analyst          → D/EBITDA, liquidez, stress test Selic
+        valuation-analyst       → 3 métodos: E/P vs CDI, múltiplos, FCF/DDM
+        technical-analyst       → SMA, RSI, MACD, Bollinger, ADX
+        macro-correlation-analyst → Impacto Selic/BRL/IPCA no setor
+        governance-analyst      → ON/liquidez (critério 2), tag along, Novo Mercado
+        [Tier 3 — adversarial, sequencial]
+        bear-analyst            → Devil's advocate: ataca hipóteses fracas, bear case
     hooks/               ← Hooks Claude Code (validação + detecção de erros)
     skills/b3-analysis/  ← Conhecimento de domínio (checklist, técnicos, setores)
 
@@ -178,10 +188,10 @@ dataflows/
     config.py            → Cache local em dataflows/data_cache/
 ```
 
-### Fluxo de execução `/analyze`
+### Fluxo de execução `/b3:analyze`
 
 ```
-/analyze WEGE3.SA
+/b3:analyze WEGE3.SA
     │
     ├─▶ [Agente 1] fetch_stock.py WEGE3.SA      ─┐
     ├─▶ [Agente 2] fetch_macro.py               ─┼─▶ Síntese (modelo principal)
@@ -190,10 +200,10 @@ dataflows/
                                               Relatório completo em PT-BR
 ```
 
-### Fluxo de execução `/portfolio`
+### Fluxo de execução `/b3:portfolio`
 
 ```
-/portfolio elite 10000
+/b3:portfolio elite 10000
     │
     ├─▶ [Agente macro]   fetch_macro.py          ─┐
     ├─▶ [Agente WEGE3]   fetch_stock + fetch_news ┤

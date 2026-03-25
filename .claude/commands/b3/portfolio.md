@@ -1,4 +1,4 @@
-# /portfolio
+# /b3:portfolio
 
 Monta uma carteira diversificada na B3 usando subagentes em paralelo — um por ticker.
 
@@ -62,7 +62,7 @@ cat .b3profile 2>/dev/null || echo "balanced"
 | `balanced` | `claude-sonnet-4-6` | `claude-haiku-4-5` |
 | `budget` | `claude-haiku-4-5` | `claude-haiku-4-5` |
 
-A síntese (Step 2) sempre usa o modelo da sessão principal (definido pelo `/b3profile`).
+A síntese (Step 2) sempre usa o modelo da sessão principal (definido pelo `/b3:profile`).
 
 ---
 
