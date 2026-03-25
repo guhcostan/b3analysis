@@ -68,10 +68,37 @@ When interpreting `fetch_stock.py` output:
 ## Output Rules
 
 - Always respond in **Portuguese (Brazil)**
+- **Every report must begin with the disclaimer:** `⚠️ **Aviso:** Este relatório é gerado por agentes de IA para fins exclusivamente **educacionais e de estudo pessoal**. Não constitui recomendação de investimento, consultoria financeira ou análise profissional. Renda variável envolve risco de perda do capital investido.`
 - Always compare expected equity return vs CDI explicitly
 - State clearly when data is unavailable or scripts return errors
 - Never recommend leverage or derivatives — long-only equity analysis only
 - Minimum position size for portfolio allocation: R$ 500
+
+## Universo B3 (Screening)
+
+Usado pelo `/b3:screen` como universo padrão de triagem. Apenas ações ON (final 3) ou com ON líquida conhecida. Atualizar conforme necessário.
+
+```
+Bancos:         ITUB3, BBAS3, BBDC3, SANB3, BRSR3
+Seguros:        PSSA3, BBSE3, IRBR3, ODPV3
+Varejo:         LREN3, ARZZ3, VULC3, PNVL3, VIVA3, GRND3
+Saúde:          FLRY3, HAPV3, RDOR3, DASA3, HYPE3
+Tech/Software:  TOTS3, INTB3
+Energia:        EQTL3, EGIE3, TAEE3, CPFE3, NEOE3
+Saneamento:     SAPR3, SBSP3, CSMG3
+Industrial:     WEGE3, ROMI3, FRAS3, LEVE3
+Farmácias:      RADL3
+Petróleo:       PETR3, PRIO3, RECV3
+Mineração:      VALE3, GOAU3, GGBR3
+Agro:           SLCE3, SMTO3, AGRO3
+Logística:      RENT3, RAIL3, EMBR3
+Construção:     DIRR3, CYRE3
+Celulose:       SUZB3, KLBN3, RANI3
+Alimentos:      ABEV3, JBSS3, MRFG3, MDIA3
+Educação:       YDUQ3
+```
+
+> Este universo pode ser substituído por qualquer lista de tickers via `/b3:screen TICKER1 TICKER2 ...`
 
 ## Gotchas
 

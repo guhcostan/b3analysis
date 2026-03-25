@@ -20,7 +20,8 @@ Always invoke scripts via `run.sh` from the workspace root.
 |---|---|---|
 | `/b3:swarm` | `/b3:swarm WEGE3.SA` | Ultra-análise com 12 agentes em 3 ondas (buy-side process) |
 | `/b3:analyze` | `/b3:analyze WEGE3.SA [2026-03-24]` | Full single-stock analysis (3 agents) |
-| `/b3:portfolio` | `/b3:portfolio elite 10000` | Diversified portfolio builder |
+| `/b3:screen` | `/b3:screen` or `/b3:screen --setor bancos` | Agent-driven B3 screening — applies 7 criteria to full universe |
+| `/b3:portfolio` | `/b3:portfolio WEGE3,ITUB3 10000` | Diversified portfolio builder |
 | `/b3:macro` | `/b3:macro` | BR macroeconomic snapshot |
 | `/b3:profile` | `/b3:profile quality` | Switch analysis model profile |
 
@@ -87,14 +88,6 @@ The `/b3:profile` command updates both atomically.
 
 Default is `balanced`. For real investment decisions use `quality` + `/effort high`.
 
-## Preset tickers
-
-| Preset | Tickers |
-|---|---|
-| `elite` | WEGE3, ITUB3, BBAS3, RADL3, LREN3, EQTL3, RENT3, PSSA3, FLRY3, TOTS3 |
-| `elite-plus` | Elite + BBSE3, SAPR3 |
-| `blue-chips` | PETR4, VALE3, ITUB4, BBDC4, ABEV3, WEGE3, RENT3, SUZB3, EQTL3, BBAS3 |
-
 ## B3 Quality Checklist
 
 <important if="analyzing any B3 stock or building a portfolio">
@@ -124,3 +117,5 @@ Red flags: ticker 4/11 with no ON liquidity · controlling shareholder only in O
 ## Report language
 
 All analysis reports must be written in **Portuguese (Brazil)**. Code, scripts, and this file are in English.
+
+Every report must begin with: `⚠️ **Aviso:** Este relatório é gerado por agentes de IA para fins exclusivamente **educacionais e de estudo pessoal**. Não constitui recomendação de investimento, consultoria financeira ou análise profissional. Renda variável envolve risco de perda do capital investido.`

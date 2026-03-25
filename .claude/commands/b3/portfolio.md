@@ -8,29 +8,29 @@ Monta uma carteira diversificada na B3 usando subagentes em paralelo — um por 
 
 Parse `$ARGUMENTS`. Para cada parâmetro ausente, use `AskUserQuestion` para perguntar ao usuário.
 
-### 0a — Preset ou tickers
+### 0a — Tickers da carteira
 
-Se `$ARGUMENTS` não contém preset nem lista de tickers, pergunte:
+Se `$ARGUMENTS` não contém uma lista de tickers, pergunte:
 
 ```
 AskUserQuestion(
-  question: "Qual carteira você quer analisar?",
+  question: "Quais tickers você quer incluir na carteira?",
   options: [
-    "elite — WEGE3, ITUB3, BBAS3, RADL3, LREN3, EQTL3, RENT3, PSSA3, FLRY3, TOTS3",
-    "elite-plus — elite + BBSE3, SAPR3",
-    "blue-chips — PETR4, VALE3, ITUB4, BBDC4, ABEV3, WEGE3, RENT3, SUZB3, EQTL3, BBAS3",
-    "Tickers customizados (eu vou digitar)"
+    "Eu vou digitar os tickers manualmente",
+    "Rode /b3:screen para descobrir candidatos primeiro (recomendado se não tem lista)"
   ]
 )
 ```
 
-Se o usuário escolher "Tickers customizados", pergunte em seguida:
+Se o usuário escolher "Eu vou digitar", pergunte em seguida:
 
 ```
 AskUserQuestion(
-  question: "Digite os tickers separados por vírgula (ex: WEGE3.SA, VALE3.SA, ITUB3.SA):"
+  question: "Digite os tickers separados por vírgula (ex: WEGE3, VALE3, ITUB3). Dica: use /b3:screen para descobrir quais ações passam nos critérios do Logan antes de montar a carteira."
 )
 ```
+
+Se o usuário escolher rodar o screen, execute o `/b3:screen` completo primeiro e use os tickers classificados como Elite ou Bom como input para a carteira.
 
 ### 0b — Capital disponível
 
@@ -63,16 +63,6 @@ cat .b3profile 2>/dev/null || echo "balanced"
 | `budget` | `claude-haiku-4-5` | `claude-haiku-4-5` |
 
 A síntese (Step 2) sempre usa o modelo da sessão principal (definido pelo `/b3:profile`).
-
----
-
-## Preset definitions
-
-| Preset | Tickers |
-|---|---|
-| `elite` | WEGE3.SA, ITUB3.SA, BBAS3.SA, RADL3.SA, LREN3.SA, EQTL3.SA, RENT3.SA, PSSA3.SA, FLRY3.SA, TOTS3.SA |
-| `elite-plus` | All `elite` + BBSE3.SA, SAPR3.SA |
-| `blue-chips` | PETR4.SA, VALE3.SA, ITUB4.SA, BBDC4.SA, ABEV3.SA, WEGE3.SA, RENT3.SA, SUZB3.SA, EQTL3.SA, BBAS3.SA |
 
 ---
 
@@ -130,6 +120,12 @@ THESIS | MAIN RISKS | RED FLAGS | PRICE TARGET 12m | EXPECTED RETURN vs CDI
 Think step by step. Re-read every individual analysis and the macro summary before writing. Challenge any conclusion that lacks numerical backing. Be specific.
 
 Produce the final portfolio report in **Portuguese**:
+
+---
+
+⚠️ **Aviso:** Este relatório é gerado por agentes de IA para fins exclusivamente **educacionais e de estudo pessoal**. Não constitui recomendação de investimento, consultoria financeira ou análise profissional. Renda variável envolve risco de perda do capital investido.
+
+---
 
 ### Resumo Macro
 (macro agent summary, 150 words max)

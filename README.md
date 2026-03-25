@@ -12,20 +12,27 @@ Análise de ações brasileiras (B3) com **agent swarm** — equipes de agentes 
 
 ---
 
+> ⚠️ **Aviso:** Este projeto é para fins exclusivamente **educacionais e de estudo pessoal**. Os relatórios são gerados por agentes de IA e não constituem recomendação de investimento, consultoria financeira ou análise profissional. Renda variável envolve risco de perda do capital investido.
+
+---
+
 ## Início rápido
 
 ```bash
 git clone https://github.com/guhcostan/b3analysis.git
 cd b3analysis
 
-# Ultra-análise com swarm de 9 agentes
+# Descobrir as melhores ações B3 (screening completo ~60 tickers)
+/b3:screen
+
+# Ultra-análise com swarm de 12 agentes
 /b3:swarm WEGE3.SA
 
 # Análise completa (3 agentes)
 /b3:analyze WEGE3.SA
 
-# Carteira diversificada
-/b3:portfolio elite 10000
+# Carteira com os aprovados no screening
+/b3:portfolio WEGE3,ITUB3,RADL3 10000
 
 # Snapshot macro
 /b3:macro
@@ -39,19 +46,14 @@ O ambiente Python (`.venv`) é criado automaticamente na primeira execução. Ne
 
 | Comando | Exemplo | Descrição |
 |---|---|---|
+| `/b3:screen` | `/b3:screen` ou `/b3:screen --setor bancos` | Screening com os 7 critérios do Logan em ~60 tickers — produz tier list rankeada |
 | `/b3:swarm` | `/b3:swarm WEGE3.SA` | Ultra-análise com 12 agentes em 3 ondas (processo buy-side) |
 | `/b3:analyze` | `/b3:analyze WEGE3.SA 2026-03-24` | Análise completa com técnica, fundamentos e macro |
-| `/b3:portfolio` | `/b3:portfolio elite 10000` | Carteira com alocação otimizada por conviction |
+| `/b3:portfolio` | `/b3:portfolio WEGE3,ITUB3,RADL3 10000` | Carteira com alocação otimizada por conviction |
 | `/b3:macro` | `/b3:macro` | Painel de indicadores BCB + notícias macro |
 | `/b3:profile` | `/b3:profile quality` | Troca o perfil de qualidade/custo dos agentes |
 
-### Presets de carteiras
-
-| Preset | Tickers |
-|---|---|
-| `elite` | WEGE3, ITUB3, BBAS3, RADL3, LREN3, EQTL3, RENT3, PSSA3, FLRY3, TOTS3 |
-| `elite-plus` | Elite + BBSE3, SAPR3 |
-| `blue-chips` | PETR4, VALE3, ITUB4, BBDC4, ABEV3, WEGE3, RENT3, SUZB3, EQTL3, BBAS3 |
+> **Fluxo recomendado:** `/b3:screen` → identifica candidatos Elite/Bom → `/b3:analyze TICKER` para aprofundar → `/b3:portfolio TICKERS CAPITAL` para alocar.
 
 ---
 
@@ -154,6 +156,7 @@ O `bear-analyst` lê todos os 7 outputs e sistematicamente desafia o bull case a
     commands/b3/         ← Slash commands /b3:* (orquestração de agent teams)
         swarm.md         → /b3:swarm — 12 agentes em 3 ondas (flagship)
         analyze.md       → /b3:analyze — 3 agentes em paralelo (ação + macro + notícias)
+        screen.md        → /b3:screen — screening dos 7 critérios em ~60 tickers
         portfolio.md     → /b3:portfolio — N+1 agentes (1 por ticker + macro)
         macro.md         → /b3:macro — Snapshot macroeconômico BCB
         profile.md       → /b3:profile — Troca o perfil de modelo

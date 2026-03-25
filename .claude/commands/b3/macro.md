@@ -34,6 +34,10 @@ bash run.sh scripts/fetch_macro.py {DATE}
 
 ---
 
+⚠️ **Aviso:** Este relatório é gerado por agentes de IA para fins exclusivamente **educacionais e de estudo pessoal**. Não constitui recomendação de investimento, consultoria financeira ou análise profissional. Renda variável envolve risco de perda do capital investido.
+
+---
+
 ### 1. Painel de Indicadores
 
 | Indicador | Valor Atual | Tendência | Impacto para RV |
