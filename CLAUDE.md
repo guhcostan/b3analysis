@@ -18,7 +18,8 @@ Always invoke scripts via `run.sh` from the workspace root.
 
 | Command | Usage | Description |
 |---|---|---|
-| `/analyze` | `/analyze WEGE3.SA [2026-03-24]` | Full single-stock analysis |
+| `/swarm` | `/swarm WEGE3.SA` | Ultra-análise com 12 agentes em 3 ondas (buy-side process) |
+| `/analyze` | `/analyze WEGE3.SA [2026-03-24]` | Full single-stock analysis (3 agents) |
 | `/portfolio` | `/portfolio elite 10000` | Diversified portfolio builder |
 | `/macro` | `/macro` | BR macroeconomic snapshot |
 | `/b3profile` | `/b3profile quality` | Switch analysis model profile |
@@ -27,8 +28,9 @@ Always invoke scripts via `run.sh` from the workspace root.
 
 ```
 .claude/
-    commands/        ← slash command orchestration (/analyze, /portfolio, /macro, /b3profile)
-    agents/          ← registered subagents (stock-analyst, macro-analyst, news-analyst)
+    commands/        ← slash command orchestration
+    agents/          ← 12 registered agents in 3 tiers (see below)
+    hooks/           ← PreToolUse (validate args) + PostToolUse (detect errors)
     skills/          ← domain knowledge (b3-analysis: checklist, technicals, sector impacts)
 scripts/
     fetch_stock.py   → OHLCV + technicals + fundamentals (365 days)
@@ -42,9 +44,30 @@ dataflows/
     config.py        → cache dir (dataflows/data_cache/)
 ```
 
+### Agent tiers (buy-side process model)
+
+**Tier 1 — Data agents** (Wave 1, parallel): collect raw data, no analysis
+- `stock-analyst` → OHLCV + technicals + fundamentals + financial statements
+- `macro-analyst` → BCB: Selic, CDI, IPCA, BRL/USD, fiscal
+- `news-analyst` → Google News PT-BR by ticker + sector
+
+**Tier 2 — Research analysts** (Wave 2, parallel): specialized analysis across 7 dimensions
+- `business-analyst` → moat, management, industry dynamics, competitive positioning
+- `financial-analyst` → escadinha (criterion 1+3), margins, ROE, FCF quality
+- `credit-analyst` → D/EBITDA, liquidity, Selic stress test, debt quality A/B/C/D
+- `valuation-analyst` → 3-method valuation (earnings yield, multiples, FCF/DDM), price target range
+- `technical-analyst` → SMA/RSI/MACD/Bollinger/ADX, entry zone, stop level
+- `macro-correlation-analyst` → Selic/BRL/IPCA impact specific to this sector/company
+- `governance-analyst` → criterion 2 (ON + liquidity), Novo Mercado, tag along, state risk
+
+**Tier 3 — Devil's advocate** (Wave 3, sequential): adversarial review
+- `bear-analyst` → reads all Tier 2 outputs, attacks 3 weakest assumptions, stress-tests bull case, proposes bear scenario + fragility score
+
+**Synthesis**: main session acts as portfolio manager — weighs bull case vs bear analyst, checks eliminatory criteria, produces final verdict + position sizing guidance.
+
 ### Orchestration pattern: Command → Agent → Skill
 
-`/analyze` and `/portfolio` spawn the registered subagents (`stock-analyst`, `macro-analyst`, `news-analyst`) in parallel via the Task tool. Each agent runs a script and returns raw output. The main session synthesizes all results into a Portuguese report using the `b3-analysis` skill for methodology.
+`/analyze` and `/portfolio` spawn data agents (`stock-analyst`, `macro-analyst`, `news-analyst`) in parallel via the Task tool. `/swarm` runs all 3 tiers sequentially (data → analysis → challenge). The main session synthesizes using the `b3-analysis` skill for methodology.
 
 ### Profile state
 
