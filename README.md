@@ -2,7 +2,7 @@
 
 ![B3Analysis](docs/banner.png)
 
-![Agent Swarm](https://img.shields.io/badge/Agent%20Swarm-12%20agentes-blueviolet?style=flat-square)
+![Agent Swarm](https://img.shields.io/badge/Agent%20Swarm-12%20agentes%20registrados-blueviolet?style=flat-square)
 ![Multi-Agent](https://img.shields.io/badge/Multi--Agent-Teams-blue?style=flat-square)
 ![B3 Brasil](https://img.shields.io/badge/B3-%F0%9F%87%A7%F0%9F%87%B7-009c3b?style=flat-square)
 ![No API Key](https://img.shields.io/badge/Dados-Sem%20API%20Key-success?style=flat-square)
@@ -25,7 +25,7 @@ cd b3analysis
 # Descobrir as melhores ações B3 (screening completo ~60 tickers)
 /b3:screen
 
-# Ultra-análise com swarm de 12 agentes
+# Ultra-análise com swarm de 11 agentes (3+7+1)
 /b3:swarm WEGE3.SA
 
 # Análise completa (3 agentes)
@@ -47,7 +47,7 @@ O ambiente Python (`.venv`) é criado automaticamente na primeira execução. Ne
 | Comando | Exemplo | Descrição |
 |---|---|---|
 | `/b3:screen` | `/b3:screen` ou `/b3:screen --setor bancos` | Screening com os 7 critérios do Logan em ~60 tickers — produz tier list rankeada |
-| `/b3:swarm` | `/b3:swarm WEGE3.SA` | Ultra-análise com 12 agentes em 3 ondas (processo buy-side) |
+| `/b3:swarm` | `/b3:swarm WEGE3.SA` | Ultra-análise com 11 agentes em 3 ondas (processo buy-side) |
 | `/b3:analyze` | `/b3:analyze WEGE3.SA 2026-03-24` | Análise completa com técnica, fundamentos e macro |
 | `/b3:portfolio` | `/b3:portfolio WEGE3,ITUB3,RADL3 10000` | Carteira com alocação otimizada por conviction |
 | `/b3:macro` | `/b3:macro` | Painel de indicadores BCB + notícias macro |
@@ -145,7 +145,7 @@ O `/b3:swarm` passa os dados brutos para 7 agentes analíticos simultaneamente, 
 
 ### Camada 3 — Devil's advocate + Síntese (modelo principal)
 
-O `bear-analyst` lê todos os 7 outputs e sistematicamente desafia o bull case antes da síntese. O modelo da sessão principal age como portfolio manager: pesa bull vs bear, verifica os critérios eliminatórios e produz o relatório final em PT-BR com veredicto e gestão de risco.
+O `bear-analyst` lê os 7 outputs de análise e sistematicamente desafia o bull case antes da síntese. O modelo da sessão principal age como portfolio manager: pesa bull vs bear, verifica os critérios eliminatórios e produz o relatório final em PT-BR com veredicto e gestão de risco.
 
 ---
 
@@ -154,7 +154,7 @@ O `bear-analyst` lê todos os 7 outputs e sistematicamente desafia o bull case a
 ```
 .claude/
     commands/b3/         ← Slash commands /b3:* (orquestração de agent teams)
-        swarm.md         → /b3:swarm — 12 agentes em 3 ondas (flagship)
+        swarm.md         → /b3:swarm — 11 agentes em 3 ondas (flagship)
         analyze.md       → /b3:analyze — 3 agentes em paralelo (ação + macro + notícias)
         screen.md        → /b3:screen — screening dos 7 critérios em ~60 tickers
         portfolio.md     → /b3:portfolio — N+1 agentes (1 por ticker + macro)
@@ -173,6 +173,7 @@ O `bear-analyst` lê todos os 7 outputs e sistematicamente desafia o bull case a
         technical-analyst       → SMA, RSI, MACD, Bollinger, ADX
         macro-correlation-analyst → Impacto Selic/BRL/IPCA no setor
         governance-analyst      → ON/liquidez (critério 2), tag along, Novo Mercado
+        news-sentiment-analyst  → Sentiment score -5 a +5, catalisadores, eventos
         [Tier 3 — adversarial, sequencial]
         bear-analyst            → Devil's advocate: ataca hipóteses fracas, bear case
     hooks/               ← Hooks Claude Code (validação + detecção de erros)
@@ -182,6 +183,7 @@ scripts/
     fetch_stock.py       → OHLCV + técnicos + fundamentos (365 dias)
     fetch_macro.py       → Indicadores BCB + histórico Selic + notícias macro
     fetch_news.py        → Notícias PT-BR por ticker + setor (Google News RSS)
+    screen_tickers.py    → Aplica os 7 critérios Logan em arquivos pré-fetched; produz tier list rankeada
 
 dataflows/
     y_finance.py         → OHLCV, fundamentos, DRE, balanço, fluxo de caixa
