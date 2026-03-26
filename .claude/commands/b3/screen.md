@@ -55,34 +55,59 @@ cat .b3profile 2>/dev/null || echo "balanced"
 
 ## Step 2 — Coleta de dados em paralelo (Wave 1)
 
-Lance um agente `stock-analyst` por ticker, todos em paralelo via Task tool.
+Lance um agente `screen-analyst` por ticker, todos em paralelo via Task tool.
 
 Para cada TICKER na lista:
-- Use o subagente registrado `stock-analyst` com: TICKER={TICKER}.SA, DATE={DATE}
-- O agente executa `fetch_stock.py` e retorna fundamentais + OHLCV + técnicos
+- Use o subagente registrado `screen-analyst` com: TICKER={TICKER}.SA, DATE={DATE}
+- O agente executa `screen_tickers.py` e retorna um JSON compacto com as métricas pré-computadas para os 7 critérios
 
 > Para o universo completo (~60 tickers), espere todos completarem antes de prosseguir para a síntese. Erros de dados para tickers individuais são normais — registre como "dados insuficientes" e continue.
+
+Os campos retornados por ticker:
+
+```json
+{
+  "ticker": "WEGE3",
+  "earnings_history": [...],
+  "has_recurring_loss": false,
+  "years_of_data": 10,
+  "ticker_type": "ON",
+  "avg_daily_volume_brl": 15000000,
+  "listing_years_approx": 10,
+  "segment": "Novo Mercado",
+  "tag_along": 100,
+  "debt_ebitda": 1.2,
+  "net_cash": false,
+  "pe_ratio": 18.5,
+  "earnings_yield": 0.054
+}
+```
 
 ---
 
 ## Step 3 — Síntese: aplicar os 7 critérios (modelo principal)
 
-Para cada ticker que retornou dados, avalie os 7 critérios do Logan usando os dados do `stock-analyst`. Seja rigoroso — os critérios 1, 2 e 3 são eliminatórios.
+Para cada ticker que retornou JSON, aplique os 7 critérios diretamente nos campos pré-computados. Não recalcule valores que já estão no JSON — use-os diretamente. Seja rigoroso — os critérios 1, 2 e 3 são eliminatórios.
 
 ### Critério 1 — Lucros crescentes (escadinha)
-Verifique o histórico de lucros no DRE retornado. Padrão esperado: escadinha consistente, sem prejuízos recorrentes. Dê ⚠️ para tropeços pontuais, ❌ para prejuízos recorrentes ou tendência de queda.
+Use `earnings_history` e `has_recurring_loss`.
+- `has_recurring_loss: true` → ❌ eliminatório
+- Analise o padrão de `earnings_history`: escadinha consistente = ✅, tropeço pontual = ⚠️, queda ou estagnação = ⚠️/❌
 
 ### Critério 2 — ON com liquidez (final 3, vol > R$ 10M/dia)
-Verifique o ticker: deve terminar em 3. Verifique o volume médio diário. Se só tem PN ou Unit (final 4, 5, 6, 11) sem ON líquida, é eliminatório.
+Use `ticker_type` e `avg_daily_volume_brl`.
+- `ticker_type != "ON"` → ❌ eliminatório
+- `avg_daily_volume_brl < 10_000_000` → ❌ eliminatório
 
 ### Critério 3 — Sem IPO recente (5+ anos de histórico de lucros na B3)
-Verifique a data de listagem e o histórico disponível. Empresas com menos de 5 anos de lucros verificáveis na B3 = eliminatório.
+Use `listing_years_approx`.
+- `listing_years_approx < 5` → ❌ eliminatório
 
 ### Critérios 4–7 (parciais)
-4. Novo Mercado (segmento de listagem)
-5. Tag Along 100%
-6. D/EBITDA < 2x ou caixa líquido
-7. Earnings Yield > CDI (~14,75% a.a.) — use P/L TTM: EY = 1/P/L
+4. **Novo Mercado**: `segment == "Novo Mercado"` → ✅
+5. **Tag Along 100%**: `tag_along == 100` → ✅
+6. **Dívida controlada**: `net_cash == true` → ✅ | `debt_ebitda <= 2` → ✅ | `debt_ebitda > 3` → ❌
+7. **Retorno > CDI**: `earnings_yield > 0.1475` → ✅ (CDI referência ~14,75% a.a.) — use o campo `earnings_yield` diretamente
 
 ---
 
@@ -138,4 +163,4 @@ Passam nos eliminatórios, mas com limitações relevantes nos parciais.
 
 ---
 
-Seja honesto sobre limitações dos dados. Se yfinance não retornar dados suficientes para avaliar um critério, sinalize como ⚠️ dados insuficientes — não invente.
+Seja honesto sobre limitações dos dados. Se `screen_tickers.py` não retornar um campo (valor `null`), sinalize como ⚠️ dados insuficientes — não invente nem estime.
