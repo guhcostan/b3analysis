@@ -1,84 +1,93 @@
 #!/usr/bin/env python3
-"""Fetch stock data (OHLCV + technicals + fundamentals) for a B3 ticker."""
+"""Fetch and pre-process key financial metrics for a B3 ticker."""
 
 import sys
 import re
+import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from dataflows.y_finance import (
+    get_fundamentals,
+    get_income_statement,
+)
 
 def _validate_ticker(ticker):
     if not re.match(r'^[A-Z]{4}\d{1,2}(\.SA)?$', ticker):
-        print(f"Erro: ticker '{ticker}' inválido. Formato: WEGE3 ou WEGE3.SA", file=sys.stderr)
         sys.exit(1)
-
 
 def _validate_date(date_str):
     try:
         datetime.strptime(date_str, "%Y-%m-%d")
     except ValueError:
-        print(f"Erro: data '{date_str}' inválida. Formato: YYYY-MM-DD", file=sys.stderr)
         sys.exit(1)
 
-from dataflows.y_finance import (
-    get_YFin_data_online,
-    get_stock_stats_indicators_window,
-    get_fundamentals,
-    get_balance_sheet,
-    get_cashflow,
-    get_income_statement,
-)
-
+def parse_income_statement(raw):
+    """
+    Espera estrutura tipo tabela/string.
+    Você pode adaptar conforme retorno real da lib.
+    """
+    # Aqui você ajusta conforme o formato real
+    # Exemplo simplificado:
+    earnings = []
+    for line in raw.split("\n"):
+        if "Net Income" in line:
+            try:
+                value = float(line.split()[-1])
+                earnings.append(value)
+            except:
+                pass
+    return earnings[-5:]  # últimos anos
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: fetch_stock.py TICKER [DATE]")
         sys.exit(1)
 
     ticker = sys.argv[1].upper()
     date_str = sys.argv[2] if len(sys.argv) > 2 else datetime.today().strftime("%Y-%m-%d")
+
     _validate_ticker(ticker)
     _validate_date(date_str)
-    curr_date = datetime.strptime(date_str, "%Y-%m-%d")
-    start_date = (curr_date - timedelta(days=365)).strftime("%Y-%m-%d")
 
-    separator = "\n" + "=" * 60 + "\n"
+    fundamentals = get_fundamentals(ticker, date_str)
+    income = get_income_statement(ticker, "yearly", date_str)
 
-    output = [f"# Stock Report: {ticker} — {date_str}"]
+    # ===== EXTRAÇÃO (ajustar conforme formato real) =====
+    earnings = parse_income_statement(income)
 
-    output.append(separator + "## OHLCV (last 365 days)\n")
-    output.append(get_YFin_data_online(ticker, start_date, date_str))
+    # Flags simples (ajuste parsing conforme retorno real)
+    is_on = ticker.endswith("3")
 
-    indicators = [
-        "close_50_sma", "close_200_sma", "close_10_ema",
-        "macd", "macd_signal", "macd_hist",
-        "rsi_14", "boll", "boll_ub", "boll_lb",
-        "atr", "adx",
-    ]
-    output.append(separator + "## Technical Indicators\n")
-    for ind in indicators:
-        try:
-            result = get_stock_stats_indicators_window(ticker, ind, date_str, 90)
-            output.append(f"### {ind.upper()}\n{result}\n")
-        except Exception as e:
-            output.append(f"### {ind.upper()}\nError: {e}\n")
+    # placeholders — ideal: extrair corretamente da fonte
+    avg_volume = fundamentals.get("avg_volume", 0)
+    segment = fundamentals.get("segment", "")
+    tag_along = fundamentals.get("tag_along", 0)
+    debt_ebitda = fundamentals.get("debt_ebitda", None)
+    net_cash = fundamentals.get("net_cash", False)
+    pe = fundamentals.get("pe_ttm", None)
 
-    output.append(separator + "## Fundamentals\n")
-    output.append(get_fundamentals(ticker, date_str))
+    earnings_yield = (1 / pe) if pe and pe != 0 else None
 
-    output.append(separator + "## Income Statement (quarterly)\n")
-    output.append(get_income_statement(ticker, "quarterly", date_str))
+    has_loss = any(e < 0 for e in earnings)
 
-    output.append(separator + "## Balance Sheet (quarterly)\n")
-    output.append(get_balance_sheet(ticker, "quarterly", date_str))
+    result = {
+        "ticker": ticker.replace(".SA", ""),
+        "years_of_data": len(earnings),
+        "earnings": earnings,
+        "has_loss": has_loss,
+        "is_on": is_on,
+        "avg_volume": avg_volume,
+        "segment": segment,
+        "tag_along": tag_along,
+        "debt_ebitda": debt_ebitda,
+        "net_cash": net_cash,
+        "pe_ttm": pe,
+        "earnings_yield": earnings_yield,
+    }
 
-    output.append(separator + "## Cash Flow (quarterly)\n")
-    output.append(get_cashflow(ticker, "quarterly", date_str))
-
-    print("\n".join(output))
-
+    print(json.dumps(result, ensure_ascii=False))
 
 if __name__ == "__main__":
     main()
