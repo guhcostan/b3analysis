@@ -9,6 +9,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import yfinance as yf
+
 from dataflows.y_finance import (
     get_fundamentals,
     get_income_statement,
@@ -25,18 +27,13 @@ def _validate_date(date_str):
         sys.exit(1)
 
 def parse_income_statement(raw):
-    """
-    Espera estrutura tipo tabela/string.
-    Você pode adaptar conforme retorno real da lib.
-    """
-    # Aqui você ajusta conforme o formato real
-    # Exemplo simplificado:
+    """Extrai valores de Net Income do CSV retornado por get_income_statement."""
     earnings = []
     for line in raw.split("\n"):
-        if "Net Income" in line:
+        if line.startswith("Net Income,"):
             try:
-                value = float(line.split()[-1])
-                earnings.append(value)
+                values = [float(v) for v in line.split(",")[1:] if v.strip()]
+                earnings.extend(values)
             except:
                 pass
     return earnings[-5:]  # últimos anos
@@ -58,15 +55,18 @@ def main():
     earnings = parse_income_statement(income)
 
     # Flags simples (ajuste parsing conforme retorno real)
-    is_on = ticker.endswith("3")
+    is_on = ticker.replace(".SA", "").endswith("3")
 
-    # placeholders — ideal: extrair corretamente da fonte
-    avg_volume = fundamentals.get("avg_volume", 0)
-    segment = fundamentals.get("segment", "")
-    tag_along = fundamentals.get("tag_along", 0)
-    debt_ebitda = fundamentals.get("debt_ebitda", None)
-    net_cash = fundamentals.get("net_cash", False)
-    pe = fundamentals.get("pe_ttm", None)
+    # extrair campos estruturados direto do yfinance info
+    info = yf.Ticker(ticker).info or {}
+    avg_volume = info.get("averageVolume", 0)
+    segment = info.get("exchange", "")
+    tag_along = 0  # não disponível via yfinance
+    total_debt = info.get("totalDebt") or 0
+    ebitda = info.get("ebitda") or 0
+    debt_ebitda = round(total_debt / ebitda, 2) if ebitda != 0 else None
+    net_cash = (info.get("totalCash") or 0) > total_debt
+    pe = info.get("trailingPE")
 
     earnings_yield = (1 / pe) if pe and pe != 0 else None
 
