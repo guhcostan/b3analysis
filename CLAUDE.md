@@ -12,7 +12,7 @@ bash run.sh scripts/fetch_macro.py 2026-03-24
 bash run.sh scripts/fetch_news.py WEGE3.SA 2026-03-24 14
 ```
 
-Always invoke scripts via `run.sh` from the workspace root.
+Always invoke scripts via `run.sh` from the workspace root. It prefers Python 3.13/3.12/3.11 (pandas 3.0.x segfaults on 3.15) and serializes the first-run bootstrap, so parallel calls are safe. If an existing `.venv` was built with 3.15, delete it and rerun.
 
 ## Commands
 
@@ -34,12 +34,14 @@ Always invoke scripts via `run.sh` from the workspace root.
     hooks/           ← PreToolUse (validate args) + PostToolUse (detect errors)
     skills/          ← domain knowledge (b3-analysis: checklist, technicals, sector impacts)
 scripts/
-    fetch_stock.py   → OHLCV + technicals + fundamentals (365 days)
+    fetch_stock.py   → key metrics (price, DY, liquidity, CDI) + B3 listing + OHLCV + technicals + fundamentals
+    screen_tickers.py → compact JSON with the 7-criteria fields (used by /b3:screen)
     fetch_macro.py   → BCB indicators + Selic history + macro news
     fetch_news.py    → Google News RSS PT-BR by ticker + sector
 dataflows/
     y_finance.py     → OHLCV, fundamentals, DRE, balance sheet, cash flow
-    bcb_data.py      → Selic, CDI, IPCA, IGP-M, BRL/USD via BCB public API
+    bcb_data.py      → Selic, CDI, IPCA, IGP-M, BRL/USD via BCB public API (+ get_cdi_reference)
+    b3_listing.py    → listing segment (NM/N1/N2), listing date, derived tag along via B3 API
     google_news_br.py → PT-BR financial news via Google News RSS
     stockstats_utils.py → RSI, MACD, Bollinger, SMA, ADX, ATR
     config.py        → cache dir (dataflows/data_cache/)
@@ -82,9 +84,9 @@ The `/b3:profile` command updates both atomically.
 
 | Profile | Synthesis (main) | Ticker agents | Macro agent |
 |---|---|---|---|
-| `quality` | claude-opus-4-6 | claude-opus-4-6 | claude-sonnet-4-6 |
-| `balanced` | claude-sonnet-4-6 | claude-sonnet-4-6 | claude-haiku-4-5 |
-| `budget` | claude-sonnet-4-6 | claude-haiku-4-5 | claude-haiku-4-5 |
+| `quality` | claude-opus-5-5 | claude-opus-5-5 | claude-sonnet-5-5 |
+| `balanced` | claude-sonnet-5-5 | claude-sonnet-5-5 | claude-haiku-5-5 |
+| `budget` | claude-sonnet-5-5 | claude-haiku-5-5 | claude-haiku-5-5 |
 
 Default is `balanced`. For real investment decisions use `quality` + `/effort high`.
 
@@ -101,7 +103,7 @@ Criteria 1, 2, and 3 are **eliminatory** — fail any one = automatic AVOID, no 
 | 4 | Novo Mercado listing | Partial |
 | 5 | Tag Along 100% | Partial |
 | 6 | Controlled debt (net cash or D/EBITDA < 2x) | Partial |
-| 7 | Expected return > CDI (~14.75% a.a.) | Partial |
+| 7 | Expected return > CDI (live from BCB — see Macro context) | Partial |
 
 Score 6–7 = Strong Buy. Score ≤ 2 = Exclude from portfolio entirely.
 </important>
@@ -110,8 +112,8 @@ Red flags: ticker 4/11 with no ON liquidity · controlling shareholder only in O
 
 ## Macro context
 
-- **Selic meta**: ~14,75% a.a. (tightening cycle, 2025–2026)
-- **CDI** ≈ Selic − 0.10% a.a. — minimum return benchmark for equities
+- **Selic meta**: 13,75% a.a. (BCB series 432, Oct/2026). Effective Selic / CDI ≈ meta − 0.10 ≈ **13,65% a.a.**
+- **CDI** is the minimum return benchmark for equities. It changes — always prefer the live value: `cdi_ref` (screen JSON), `cdi_ref_pct` (fetch_stock Key Metrics) or the macro agent output. The figures above are only a fallback.
 - High Selic: favors insurance and exporters; hurts retail, utilities, high-growth tech
 
 ## Report language

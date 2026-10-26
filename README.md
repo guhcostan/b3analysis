@@ -6,7 +6,7 @@
 ![Multi-Agent](https://img.shields.io/badge/Multi--Agent-Teams-blue?style=flat-square)
 ![B3 Brasil](https://img.shields.io/badge/B3-%F0%9F%87%A7%F0%9F%87%B7-009c3b?style=flat-square)
 ![No API Key](https://img.shields.io/badge/Dados-Sem%20API%20Key-success?style=flat-square)
-![Claude Code](https://img.shields.io/badge/Claude%20Code-claude--sonnet--4--6-orange?style=flat-square)
+![Claude Code](https://img.shields.io/badge/Claude%20Code-claude--sonnet--5--5-orange?style=flat-square)
 
 Análise de ações brasileiras (B3) com **agent swarm** — equipes de agentes especializados em paralelo usando Claude Code. Sem API keys: todos os dados vêm de fontes públicas (yfinance, BCB, Google News RSS).
 
@@ -63,9 +63,9 @@ Controla qual modelo Claude usa por tipo de agente. Troque com `/b3:profile`.
 
 | Perfil | Síntese | Agentes ticker | Agente macro | Quando usar |
 |---|---|---|---|---|
-| `quality` | claude-opus-4-6 | claude-opus-4-6 | claude-sonnet-4-6 | Decisão real de investimento |
-| `balanced` | claude-sonnet-4-6 | claude-sonnet-4-6 | claude-haiku-4-5 | Padrão — bom equilíbrio |
-| `budget` | claude-sonnet-4-6 | claude-haiku-4-5 | claude-haiku-4-5 | Screening rápido |
+| `quality` | claude-opus-5-5 | claude-opus-5-5 | claude-sonnet-5-5 | Decisão real de investimento |
+| `balanced` | claude-sonnet-5-5 | claude-sonnet-5-5 | claude-haiku-5-5 | Padrão — bom equilíbrio |
+| `budget` | claude-sonnet-5-5 | claude-haiku-5-5 | claude-haiku-5-5 | Screening rápido |
 
 Para máxima qualidade na síntese, combine `quality` com `/effort high`.
 
@@ -83,7 +83,7 @@ Baseada na tier list B3 do Logan. Os critérios 1, 2 e 3 são **eliminatórios**
 | 4 | Novo Mercado (maior governança da B3) | Parcial |
 | 5 | Tag Along 100% (proteção ao minoritário) | Parcial |
 | 6 | Dívida controlada (caixa líquido ou D/EBITDA < 2x) | Parcial |
-| 7 | Retorno esperado > CDI (~14,75% a.a.) | Parcial |
+| 7 | Retorno esperado > CDI vigente (BCB) | Parcial |
 
 ### Sinais de alerta
 
@@ -180,14 +180,15 @@ O `bear-analyst` lê os 7 outputs de análise e sistematicamente desafia o bull 
     skills/b3-analysis/  ← Conhecimento de domínio (checklist, técnicos, setores)
 
 scripts/
-    fetch_stock.py       → OHLCV + técnicos + fundamentos (365 dias)
+    fetch_stock.py       → métricas-chave (preço, DY, liquidez, CDI) + listagem B3 + OHLCV + técnicos + fundamentos
     fetch_macro.py       → Indicadores BCB + histórico Selic + notícias macro
     fetch_news.py        → Notícias PT-BR por ticker + setor (Google News RSS)
-    screen_tickers.py    → Aplica os 7 critérios Logan em arquivos pré-fetched; produz tier list rankeada
+    screen_tickers.py    → JSON compacto com os campos dos 7 critérios Logan (usado pelo /b3:screen)
 
 dataflows/
     y_finance.py         → OHLCV, fundamentos, DRE, balanço, fluxo de caixa
     bcb_data.py          → Selic, CDI, IPCA, IGP-M, câmbio via API pública BCB
+    b3_listing.py        → segmento de listagem (NM/N1/N2), data de listagem e tag along via API da B3
     google_news_br.py    → Notícias financeiras PT-BR via Google News RSS
     stockstats_utils.py  → RSI, MACD, Bollinger, SMA, ADX, ATR via stockstats
     config.py            → Cache local em dataflows/data_cache/
@@ -239,14 +240,14 @@ requests==2.32.5
 python-dateutil==2.9.0.post0
 ```
 
-Python 3.10+. Gerenciado automaticamente pelo `run.sh`.
+Python 3.11–3.13 (o pandas 3.0.x quebra no 3.15). Gerenciado automaticamente pelo `run.sh`.
 
 ---
 
 ## Contexto macro (atualizar periodicamente)
 
-- **Selic meta**: ~14,75% a.a. (ciclo de alta, 2025–2026)
-- **CDI** é o benchmark mínimo de retorno para renda variável
+- **Selic meta**: 13,75% a.a. (out/2026); CDI ≈ 13,65% a.a.
+- **CDI** é o benchmark mínimo de retorno para renda variável — os scripts buscam o valor vigente no BCB (`cdi_ref`)
 - **IPCA elevado** comprime margens de empresas com custo fixo alto
 - **BRL/USD**: moeda fraca favorece exportadoras; importadoras e endividadas em dólar sofrem
 

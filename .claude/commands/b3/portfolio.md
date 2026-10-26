@@ -58,9 +58,9 @@ cat .b3profile 2>/dev/null || echo "balanced"
 
 | Profile | Ticker agents model | Macro agent model |
 |---|---|---|
-| `quality` | `claude-opus-4-6` | `claude-sonnet-4-6` |
-| `balanced` | `claude-sonnet-4-6` | `claude-haiku-4-5` |
-| `budget` | `claude-haiku-4-5` | `claude-haiku-4-5` |
+| `quality` | `claude-opus-5-5` | `claude-sonnet-5-5` |
+| `balanced` | `claude-sonnet-5-5` | `claude-haiku-5-5` |
+| `budget` | `claude-haiku-5-5` | `claude-haiku-5-5` |
 
 A síntese (Step 2) sempre usa o modelo da sessão principal (definido pelo `/b3:profile`).
 
@@ -106,7 +106,7 @@ CHECKLIST (cite specific data evidence — criteria 1/2/3 are ELIMINATORY: fail 
 4. Novo Mercado listing: ✅/⚠️/❌ — evidence: ...
 5. Tag Along 100%: ✅/⚠️/❌ — evidence: ...
 6. Controlled debt (D/EBITDA < 2x or net cash): ✅/⚠️/❌ — evidence: ...
-7. Expected return > CDI (~14.75% a.a.): ✅/⚠️/❌ — evidence: ...
+7. Expected return > CDI (current value from macro agent / `cdi_ref_pct`): ✅/⚠️/❌ — evidence: ...
 
 KEY METRICS: Price | P/L TTM | P/VP | DY | ROE | ROA | Margins | Revenue YoY | D/EBITDA | FCF yield
 TECHNICAL: Trend (SMA50/200) | RSI14 | MACD signal

@@ -34,9 +34,9 @@ cat .b3profile 2>/dev/null || echo "balanced"
 
 | Profile | Modelo dos agentes |
 |---|---|
-| `quality` | `claude-opus-4-6` |
-| `balanced` | `claude-sonnet-4-6` |
-| `budget` | `claude-haiku-4-5` |
+| `quality` | `claude-opus-5-5` |
+| `balanced` | `claude-sonnet-5-5` |
+| `budget` | `claude-haiku-5-5` |
 
 ---
 
@@ -138,7 +138,7 @@ Produce the final swarm report in **Portuguese**:
 | Base | {método} | R$ X | {%} | {acima/abaixo} |
 | Bull | {método} | R$ X | {%} | {acima/abaixo} |
 
-CDI hurdle: ~14,75% a.a.
+CDI hurdle: CDI vigente (agente macro / `cdi_ref_pct`)
 
 ---
 

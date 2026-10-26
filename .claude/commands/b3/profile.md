@@ -16,9 +16,9 @@ Exemplos:
 
 | Perfil | Síntese (sessão principal) | Agentes de dados | Custo aproximado |
 |---|---|---|---|
-| `quality` | claude-opus-4-6 | claude-opus-4-6 | $$$ |
-| `balanced` | claude-sonnet-4-6 | claude-sonnet-4-6 | $$ |
-| `budget` | claude-sonnet-4-6 | claude-haiku-4-5 | $ |
+| `quality` | claude-opus-5-5 | claude-opus-5-5 | $$$ |
+| `balanced` | claude-sonnet-5-5 | claude-sonnet-5-5 | $$ |
+| `budget` | claude-sonnet-5-5 | claude-haiku-5-5 | $ |
 
 **Quando usar cada perfil:**
 - `quality` — Decisão real de investimento. Melhor raciocínio na síntese e análise por ticker.
@@ -47,12 +47,12 @@ echo "{PERFIL}" > .b3profile
 
 Para `quality`:
 ```json
-{ "model": "claude-opus-4-6" }
+{ "model": "claude-opus-5-5" }
 ```
 
 Para `balanced` ou `budget`:
 ```json
-{ "model": "claude-sonnet-4-6" }
+{ "model": "claude-sonnet-5-5" }
 ```
 
 3. Confirmar ao usuário:

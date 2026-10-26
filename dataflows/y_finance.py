@@ -1,3 +1,4 @@
+import sys
 from typing import Annotated
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
@@ -116,6 +117,12 @@ def get_stock_stats_indicators_window(
             "Usage: Set stop-loss levels and adjust position sizes based on current market volatility. "
             "Tips: It's a reactive measure, so use it as part of a broader risk management strategy."
         ),
+        # Trend Strength
+        "adx": (
+            "ADX: Average Directional Index, measures trend strength regardless of direction. "
+            "Usage: ADX > 25 indicates a strong trend; < 20 indicates a weak or ranging market. "
+            "Tips: Pair with SMA/MACD to determine trend direction."
+        ),
         # Volume-Based Indicators
         "vwma": (
             "VWMA: A moving average weighted by volume. "
@@ -164,7 +171,7 @@ def get_stock_stats_indicators_window(
             ind_string += f"{date_str}: {value}\n"
         
     except Exception as e:
-        print(f"Error getting bulk stockstats data: {e}")
+        print(f"Error getting bulk stockstats data: {e}", file=sys.stderr)
         # Fallback to original implementation if bulk method fails
         ind_string = ""
         curr_date_dt = datetime.strptime(curr_date, "%Y-%m-%d")
@@ -220,7 +227,7 @@ def _get_stock_stats_bulk(
         today_date = pd.Timestamp.today()
         curr_date_dt = pd.to_datetime(curr_date)
 
-        end_date = today_date
+        end_date = today_date + pd.Timedelta(days=1)  # yfinance end is exclusive
         start_date = today_date - pd.DateOffset(years=15)
         start_date_str = start_date.strftime("%Y-%m-%d")
         end_date_str = end_date.strftime("%Y-%m-%d")
@@ -291,7 +298,8 @@ def get_stockstats_indicator(
         )
     except Exception as e:
         print(
-            f"Error getting stockstats indicator data for indicator {indicator} on {curr_date}: {e}"
+            f"Error getting stockstats indicator data for indicator {indicator} on {curr_date}: {e}",
+            file=sys.stderr,
         )
         return ""
 

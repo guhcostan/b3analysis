@@ -5,7 +5,7 @@ Aplica os 7 critérios do Logan a um universo de ações B3 e produz uma tier li
 **Uso:** `/b3:screen $ARGUMENTS`
 
 Exemplos:
-- `/b3:screen` — screening completo do universo padrão (~60 tickers, pode levar alguns minutos)
+- `/b3:screen` — screening completo do universo padrão (~55 tickers, pode levar alguns minutos)
 - `/b3:screen WEGE3 ITUB3 FLRY3 RADL3 TOTS3` — screening de tickers específicos
 - `/b3:screen --setor bancos` — screening de um setor (bancos, seguros, varejo, saude, energia, industrial, agro)
 
@@ -19,19 +19,19 @@ Parse `$ARGUMENTS`.
 
 **Se `--setor SETOR`**: use o subconjunto do setor correspondente (ver universo na skill `b3-analysis`):
 - `bancos` → ITUB3, BBAS3, BBDC3, SANB3, BRSR3
-- `seguros` → PSSA3, BBSE3, IRBR3, ODPV3
-- `varejo` → LREN3, ARZZ3, VULC3, PNVL3, VIVA3, GRND3
+- `seguros` → PSSA3, BBSE3, IRBR3, CXSE3
+- `varejo` → LREN3, AZZA3, VULC3, PNVL3, VIVA3, GRND3
 - `saude` → FLRY3, HAPV3, RDOR3, DASA3, HYPE3
-- `energia` → EQTL3, EGIE3, TAEE3, CPFE3, NEOE3
+- `energia` → EQTL3, EGIE3, TAEE3, CPFE3
 - `saneamento` → SAPR3, SBSP3, CSMG3
 - `industrial` → WEGE3, ROMI3, FRAS3, LEVE3
 - `agro` → SLCE3, SMTO3, AGRO3
 - `petroleo` → PETR3, PRIO3, RECV3
-- `logistica` → RENT3, RAIL3, EMBR3
+- `logistica` → RENT3, RAIL3, EMBJ3
 - `celulose` → SUZB3, KLBN3, RANI3
-- `alimentos` → ABEV3, JBSS3, MRFG3, MDIA3
+- `alimentos` → ABEV3, MBRF3, MDIA3
 
-**Se sem argumentos**: avise o usuário que o screening completo cobrirá ~60 tickers e pode levar alguns minutos. Use o universo completo da skill `b3-analysis` (seção `## Universo B3`).
+**Se sem argumentos**: avise o usuário que o screening completo cobrirá ~55 tickers e pode levar alguns minutos. Use o universo completo da skill `b3-analysis` (seção `## Universo B3`).
 
 Informe o usuário sobre o universo selecionado antes de iniciar.
 
@@ -47,9 +47,9 @@ cat .b3profile 2>/dev/null || echo "balanced"
 
 | Profile | Agentes de dados |
 |---|---|
-| `quality` | `claude-opus-4-6` |
-| `balanced` | `claude-sonnet-4-6` |
-| `budget` | `claude-haiku-4-5` |
+| `quality` | `claude-opus-5-5` |
+| `balanced` | `claude-sonnet-5-5` |
+| `budget` | `claude-haiku-5-5` |
 
 ---
 
@@ -61,7 +61,7 @@ Para cada TICKER na lista:
 - Use o subagente registrado `screen-analyst` com: TICKER={TICKER}.SA, DATE={DATE}
 - O agente executa `screen_tickers.py` e retorna um JSON compacto com as métricas pré-computadas para os 7 critérios
 
-> Para o universo completo (~60 tickers), espere todos completarem antes de prosseguir para a síntese. Erros de dados para tickers individuais são normais — registre como "dados insuficientes" e continue.
+> Para o universo completo (~55 tickers), espere todos completarem antes de prosseguir para a síntese. Erros de dados para tickers individuais são normais — registre como "dados insuficientes" e continue.
 
 Os campos retornados por ticker:
 
@@ -73,13 +73,18 @@ Os campos retornados por ticker:
   "years_of_data": 10,
   "ticker_type": "ON",
   "avg_daily_volume_brl": 15000000,
-  "listing_years_approx": 10,
+  "listing_date": "1971-01-01",
+  "listing_years_approx": 55.8,
   "segment": "Novo Mercado",
   "tag_along": 100,
+  "tag_along_source": "segment_rule",
+  "b3_found": true,
   "debt_ebitda": 1.2,
   "net_cash": false,
   "pe_ratio": 18.5,
-  "earnings_yield": 0.054
+  "earnings_yield": 0.054,
+  "cdi_ref": 0.1365,
+  "cdi_source": "BCB SGS 4389 (23/10/2026)"
 }
 ```
 
@@ -100,14 +105,16 @@ Use `ticker_type` e `avg_daily_volume_brl`.
 - `avg_daily_volume_brl < 10_000_000` → ❌ eliminatório
 
 ### Critério 3 — Sem IPO recente (5+ anos de histórico de lucros na B3)
-Use `listing_years_approx`.
+Use `listing_years_approx` (anos desde a data de listagem na B3, via API da B3 — **não** use `years_of_data`, que é limitado a ~4 anos pelo yfinance).
 - `listing_years_approx < 5` → ❌ eliminatório
+- `listing_years_approx` entre 5 e 6 → ⚠️ (no limite — o histórico de lucro pode ser menor que o tempo de listagem)
+- `listing_years_approx: null` → ⚠️ dados insuficientes (verifique se o ticker mudou de código ou foi deslistado)
 
 ### Critérios 4–7 (parciais)
-4. **Novo Mercado**: `segment == "Novo Mercado"` → ✅
-5. **Tag Along 100%**: `tag_along == 100` → ✅
+4. **Novo Mercado**: `segment == "Novo Mercado"` → ✅ | `"Nível 2"` → ⚠️ | demais → ❌
+5. **Tag Along 100%**: `tag_along == 100` → ✅ | `tag_along == 80` com `tag_along_source == "legal_minimum"` → ⚠️ (mínimo legal; o estatuto pode conceder mais — não verificado)
 6. **Dívida controlada**: `net_cash == true` → ✅ | `debt_ebitda <= 2` → ✅ | `debt_ebitda > 3` → ❌
-7. **Retorno > CDI**: `earnings_yield > 0.1475` → ✅ (CDI referência ~14,75% a.a.) — use o campo `earnings_yield` diretamente
+7. **Retorno > CDI**: `earnings_yield > cdi_ref` → ✅ — use os campos `earnings_yield` e `cdi_ref` diretamente (ambos em fração; `cdi_ref` vem do BCB). Se `cdi_ref` for `null`, use o CDI de referência do CLAUDE.md e sinalize.
 
 ---
 

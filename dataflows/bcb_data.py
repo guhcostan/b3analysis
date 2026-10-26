@@ -9,9 +9,11 @@ from typing import Optional
 _BCB_BASE_URL = "https://api.bcb.gov.br/dados/serie/bcdata.sgs.{code}/dados"
 
 _SERIES = {
-    "selic_diaria": 432,
-    "selic_meta": 1178,
-    "cdi": 4391,
+    "selic_meta": 432,       # Copom target — entries are dated through the next meeting
+    "selic_diaria": 1178,    # effective Selic Over, annualized (base 252)
+    "cdi": 4391,             # CDI accumulated in the month (% a.m.)
+    "cdi_anual": 4389,       # CDI annualized (base 252), daily
+    "selic_diaria_pct": 11,  # effective Selic, % per business day
     "ipca": 433,
     "igpm": 189,
     "cambio_usd": 1,
@@ -24,7 +26,9 @@ _SERIES = {
 _SERIES_LABELS = {
     "selic_diaria": "Taxa Selic Over (% a.a.)",
     "selic_meta": "Meta Selic (% a.a.)",
-    "cdi": "CDI (% a.a.)",
+    "cdi": "CDI (% a.m.)",
+    "cdi_anual": "CDI (% a.a.)",
+    "selic_diaria_pct": "Selic efetiva (% a.d.)",
     "ipca": "IPCA (% mensal)",
     "igpm": "IGP-M (% mensal)",
     "cambio_usd": "Câmbio BRL/USD",
@@ -35,29 +39,62 @@ _SERIES_LABELS = {
 }
 
 
+def _get_json(url: str, code: int, retries: int = 2):
+    last_err = None
+    for _ in range(retries + 1):
+        try:
+            resp = requests.get(url, timeout=20)
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            last_err = e
+    print(f"[BCB] Aviso: falha ao buscar série {code}: {last_err}", file=sys.stderr)
+    return None
+
+
 def _fetch_series(code: int, n_last: int = 10) -> list[dict]:
     url = f"{_BCB_BASE_URL.format(code=code)}/ultimos/{n_last}?formato=json"
-    try:
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        return resp.json()
-    except Exception as e:
-        print(f"[BCB] Aviso: falha ao buscar série {code}: {e}", file=sys.stderr)
-        return []
+    data = _get_json(url, code)
+    return data if isinstance(data, list) else []
 
 
 def _fetch_series_range(code: int, start_date: str, end_date: str) -> list[dict]:
     start = datetime.strptime(start_date, "%Y-%m-%d").strftime("%d/%m/%Y")
     end = datetime.strptime(end_date, "%Y-%m-%d").strftime("%d/%m/%Y")
     url = f"{_BCB_BASE_URL.format(code=code)}/dados?formato=json&dataInicial={start}&dataFinal={end}"
-    try:
-        resp = requests.get(url, timeout=10)
-        resp.raise_for_status()
-        data = resp.json()
-        return data if isinstance(data, list) else []
-    except Exception as e:
-        print(f"[BCB] Aviso: falha ao buscar série {code}: {e}", file=sys.stderr)
-        return []
+    data = _get_json(url, code)
+    return data if isinstance(data, list) else []
+
+
+def get_cdi_reference(curr_date: str) -> tuple[Optional[float], Optional[str]]:
+    """
+    Returns (cdi_pct_annual, source) — the equity hurdle rate.
+    Tries annualized CDI, then the daily Selic rate (annualized), then the
+    Copom target − 0.10. Returns (None, None) if the BCB API is unavailable.
+    Uses the latest available values (the "ultimos" endpoint is far more
+    reliable than date-range queries).
+    """
+    def _latest(key):
+        data = _fetch_series(_SERIES[key], n_last=1)
+        try:
+            return float(data[-1]["valor"]), data[-1]["data"]
+        except (IndexError, KeyError, ValueError):
+            return None, None
+
+    val, dt = _latest("cdi_anual")
+    if val is not None:
+        return round(val, 2), f"BCB SGS {_SERIES['cdi_anual']} ({dt})"
+
+    val, dt = _latest("selic_diaria_pct")
+    if val is not None:
+        annual = ((1 + val / 100) ** 252 - 1) * 100
+        return round(annual, 2), f"BCB SGS {_SERIES['selic_diaria_pct']} anualizada ({dt})"
+
+    val, dt = _latest("selic_meta")
+    if val is not None:
+        return round(val - 0.10, 2), f"BCB SGS {_SERIES['selic_meta']} meta − 0,10"
+
+    return None, None
 
 
 def get_bcb_macro_indicators(
@@ -85,7 +122,7 @@ def get_bcb_macro_indicators(
     sections.append(f"## Indicadores Macroeconômicos Brasileiros (BCB)\n")
     sections.append(f"Período: {start_date} a {curr_date}\n")
 
-    selic = _fetch_series(_SERIES["selic_diaria"], n_last=5)
+    selic = _fetch_series_range(_SERIES["selic_diaria"], start_date, curr_date)[-5:]
     if selic:
         latest = selic[-1]
         sections.append(f"### Taxa Selic Over\n")
@@ -93,25 +130,18 @@ def get_bcb_macro_indicators(
         rows = " | ".join([f"{d['data']}: {d['valor']}%" for d in selic])
         sections.append(f"Histórico recente: {rows}\n")
 
-    selic_meta = _fetch_series(_SERIES["selic_meta"], n_last=3)
+    selic_meta = _fetch_series_range(_SERIES["selic_meta"], start_date, curr_date) or _fetch_series(
+        _SERIES["selic_meta"], n_last=1
+    )
     if selic_meta:
         latest = selic_meta[-1]
         sections.append(f"\n### Meta Selic (Copom)\n")
         sections.append(f"Último valor: **{latest['valor']}% a.a.** (data: {latest['data']})\n")
 
-    cdi = _fetch_series(_SERIES["cdi"], n_last=5)
-    if cdi:
-        latest = cdi[-1]
-        try:
-            cdi_mensal = float(latest["valor"])
-            cdi_anual = round(((1 + cdi_mensal / 100) ** 12 - 1) * 100, 2)
-            sections.append(f"\n### CDI\n")
-            sections.append(
-                f"Último valor: **{cdi_mensal}% ao mês** (~{cdi_anual}% a.a. projetado) (data: {latest['data']})\n"
-            )
-        except ValueError:
-            sections.append(f"\n### CDI\n")
-            sections.append(f"Último valor: {latest['valor']}% (data: {latest['data']})\n")
+    cdi_ref, cdi_src = get_cdi_reference(curr_date)
+    if cdi_ref is not None:
+        sections.append(f"\n### CDI (referência anual)\n")
+        sections.append(f"**{cdi_ref}% a.a.** — fonte: {cdi_src}\n")
 
     ipca_data = _fetch_series_range(_SERIES["ipca"], start_date, curr_date)
     if not ipca_data:
@@ -187,6 +217,17 @@ def get_bcb_selic_history(
     meta_data = _fetch_series_range(_SERIES["selic_meta"], start_date, curr_date)
     if not meta_data:
         meta_data = _fetch_series(_SERIES["selic_meta"], n_last=6)
+    past = [d for d in meta_data if datetime.strptime(d["data"], "%d/%m/%Y") <= end_dt]
+    if not past:
+        # Range query failed and "ultimos" only returned entries dated ahead
+        # (the target is published through the next Copom meeting).
+        latest = meta_data[-1]
+        return (
+            f"## Meta Selic (Copom)\n\n"
+            f"Meta vigente: **{latest['valor']}% a.a.** (série 432 já datada até {latest['data']} — "
+            f"vale até a próxima reunião do Copom). Histórico indisponível no momento (API do BCB instável).\n"
+        )
+    meta_data = past
 
     if not meta_data:
         return "Dados da Selic indisponíveis no momento."

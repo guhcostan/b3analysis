@@ -11,11 +11,11 @@ Methodology from Logan's tier list (YouTube: @investimentosemevidencia). Criteri
 |---|---|---|---|
 | 1 | **Consistent growing profits (escadinha)** | 🔴 YES | Stair-step pattern in income statement, no recurring losses. #1 criterion. |
 | 2 | **Liquid ON shares (ticker ending in 3)** | 🔴 YES | PN-only or Unit-only with no ON liquidity = disqualified. Verify volume in OHLCV data. |
-| 3 | **No recent IPO** | 🔴 YES | Minimum 5+ years of profit history on B3. |
-| 4 | **Novo Mercado listing** | No | Highest B3 governance level |
-| 5 | **Tag Along 100%** | No | Minority protection — < 100% = penalize |
+| 3 | **No recent IPO** | 🔴 YES | Minimum 5+ years of profit history on B3. Use the B3 listing date (`listing_years` / `listing_years_approx`), not the number of annual statements — yfinance only returns ~4 years. |
+| 4 | **Novo Mercado listing** | No | Highest B3 governance level — `segment` from the B3 listed-companies API |
+| 5 | **Tag Along 100%** | No | Minority protection — < 100% = penalize. Derived from segment: NM/N2 = 100%; otherwise 80% legal minimum (bylaws may grant more) |
 | 6 | **Controlled debt** | No | Prefer net cash or D/EBITDA < 2x |
-| 7 | **Expected return > CDI** | No | Selic ~14,75% a.a. — justify via earnings yield, DCF, or DY |
+| 7 | **Expected return > CDI** | No | Use the live CDI (`cdi_ref` from scripts / macro agent) — justify via earnings yield, DCF, or DY |
 
 ### Score interpretation (after passing eliminatory filters)
 - 6–7: Strong Buy / Elite
@@ -80,21 +80,21 @@ Usado pelo `/b3:screen` como universo padrão de triagem. Apenas ações ON (fin
 
 ```
 Bancos:         ITUB3, BBAS3, BBDC3, SANB3, BRSR3
-Seguros:        PSSA3, BBSE3, IRBR3, ODPV3
-Varejo:         LREN3, ARZZ3, VULC3, PNVL3, VIVA3, GRND3
+Seguros:        PSSA3, BBSE3, IRBR3, CXSE3
+Varejo:         LREN3, AZZA3, VULC3, PNVL3, VIVA3, GRND3
 Saúde:          FLRY3, HAPV3, RDOR3, DASA3, HYPE3
 Tech/Software:  TOTS3, INTB3
-Energia:        EQTL3, EGIE3, TAEE3, CPFE3, NEOE3
+Energia:        EQTL3, EGIE3, TAEE3, CPFE3
 Saneamento:     SAPR3, SBSP3, CSMG3
 Industrial:     WEGE3, ROMI3, FRAS3, LEVE3
 Farmácias:      RADL3
 Petróleo:       PETR3, PRIO3, RECV3
 Mineração:      VALE3, GOAU3, GGBR3
 Agro:           SLCE3, SMTO3, AGRO3
-Logística:      RENT3, RAIL3, EMBR3
+Logística:      RENT3, RAIL3, EMBJ3
 Construção:     DIRR3, CYRE3
 Celulose:       SUZB3, KLBN3, RANI3
-Alimentos:      ABEV3, JBSS3, MRFG3, MDIA3
+Alimentos:      ABEV3, MBRF3, MDIA3
 Educação:       YDUQ3
 ```
 
@@ -104,7 +104,9 @@ Educação:       YDUQ3
 
 - **Criterion 2 is often misread**: check the actual ticker suffix AND verify daily volume > R$ 10M. A ticker ending in 3 with low liquidity still fails criterion 2.
 - **yfinance P/L can be misleading for Brazilian stocks**: cross-check against the income statement returned by `fetch_stock.py`. Trailing PE from `info` uses US GAAP adjustments.
-- **CDI is monthly in BCB data**: `fetch_macro.py` converts it to annualized, but always double-check the annualization logic when citing CDI % a.a.
+- **CDI reference**: scripts expose the annualized CDI from BCB series 4389 (`cdi_ref`). Prefer it over any hardcoded value. BCB series 432 is the Copom **target** (dated through the next meeting); 1178 is the **effective** Selic.
+- **Tickers change**: mergers and delistings break yfinance silently (empty data). If a ticker returns no data, check `b3_found` in the screening JSON and update the universe below.
+- **Intraday bars**: when the reference date is today, the last OHLCV bar is partial (`last_bar_may_be_intraday`). Flag prices as provisional on high-volatility days.
 - **Google News RSS has no pagination**: if the lookback window is long and articles are sparse, `fetch_news.py` may return fewer results than expected. This is a data gap, not an error.
 - **D/EBITDA from yfinance uses `debtToEquity`** (debt/equity ratio), not debt/EBITDA. To get D/EBITDA, divide `totalDebt` by `ebitda` from the fundamentals output.
 - **Score ≤ 2 = exclude from portfolio regardless of macro environment**. No macro tailwind overrides a failed eliminatory criterion.

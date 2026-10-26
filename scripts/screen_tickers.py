@@ -37,6 +37,8 @@ from dataflows.y_finance import (
     get_income_statement,
     get_YFin_data_online,
 )
+from dataflows.b3_listing import get_listing_info
+from dataflows.bcb_data import get_cdi_reference
 
 
 def _parse_csv(raw: str) -> dict[str, list]:
@@ -115,7 +117,8 @@ def _extract_volume_and_price(ticker: str, date_str: str) -> tuple[float, float]
     """
     end = datetime.strptime(date_str, "%Y-%m-%d")
     start = (end - timedelta(days=90)).strftime("%Y-%m-%d")
-    raw = get_YFin_data_online(ticker, start, date_str)
+    # yfinance `end` is exclusive — add a day so the reference date is included
+    raw = get_YFin_data_online(ticker, start, (end + timedelta(days=1)).strftime("%Y-%m-%d"))
 
     lines = [l for l in raw.splitlines() if l.strip() and not l.startswith("#")]
     if not lines:
@@ -151,7 +154,7 @@ def _extract_volume_and_price(ticker: str, date_str: str) -> tuple[float, float]
 
 def _extract_fundamentals(ticker: str, date_str: str) -> dict:
     """
-    Extracts PE ratio, D/EBITDA, segment and tag_along from fundamentals text.
+    Extracts PE ratio and D/EBITDA from fundamentals text.
     """
     raw = get_fundamentals(ticker, date_str)
     kv = _parse_kv(raw)
@@ -175,16 +178,9 @@ def _extract_fundamentals(ticker: str, date_str: str) -> dict:
                 pass
             break
 
-    # tag_along and segment are not returned by yfinance — mark as unavailable
-    # The LLM will flag these as ⚠️ dados insuficientes
-    tag_along = None
-    segment = None
-
     return {
         "pe_ratio": pe_ratio,
         "debt_ebitda": debt_ebitda,
-        "tag_along": tag_along,
-        "segment": segment,
     }
 
 
@@ -242,6 +238,12 @@ def main():
     # Critério 6 — net cash
     net_cash = _extract_net_cash(ticker, date_str)
 
+    # Critérios 3, 4, 5 — B3 listed-companies API
+    listing = get_listing_info(ticker, date_str)
+
+    # Critério 7 — hurdle rate
+    cdi_ref, cdi_source = get_cdi_reference(date_str)
+
     result = {
         "ticker": ticker_clean,
         "date": date_str,
@@ -253,18 +255,23 @@ def main():
         "ticker_type": ticker_type,
         "avg_daily_volume_brl": round(avg_volume_brl),
         "last_close": last_close,
-        # Critério 3 — approximated from years of income statement data
-        "listing_years_approx": years,
-        # Critério 4 — not available via yfinance, LLM will flag as ⚠️
-        "segment": fund["segment"],
-        # Critério 5 — not available via yfinance, LLM will flag as ⚠️
-        "tag_along": fund["tag_along"],
+        # Critério 3 — years since B3 listing date (yfinance only has ~4 annual periods)
+        "listing_date": listing["listing_date"],
+        "listing_years_approx": listing["listing_years"],
+        # Critério 4
+        "segment": listing["segment"],
+        # Critério 5 — derived from segment (NM/N2 = 100; else 80 = legal minimum)
+        "tag_along": listing["tag_along_on"],
+        "tag_along_source": listing["tag_along_source"],
+        "b3_found": listing["b3_found"],
         # Critério 6
         "debt_ebitda": fund["debt_ebitda"],
         "net_cash": net_cash,
         # Critério 7
         "pe_ratio": pe_ratio,
         "earnings_yield": earnings_yield,
+        "cdi_ref": round(cdi_ref / 100, 4) if cdi_ref is not None else None,
+        "cdi_source": cdi_source,
     }
 
     print(json.dumps(result, ensure_ascii=False, indent=2))

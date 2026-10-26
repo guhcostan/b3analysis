@@ -5,6 +5,7 @@ _BASE_DIR = Path(__file__).resolve().parent
 
 DEFAULT_CONFIG = {
     "data_cache_dir": str(_BASE_DIR / "data_cache"),
+    "data_vendors": {"technical_indicators": "yfinance"},
 }
 
 _config = DEFAULT_CONFIG.copy()

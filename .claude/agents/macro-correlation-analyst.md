@@ -16,7 +16,7 @@ You will receive: TICKER, RAW_STOCK (includes sector/industry info), RAW_MACRO (
   - Consumer demand impact (retail/consumer sectors)
   - Capital allocation competition (equity vs risk-free CDI)
   - Float income (insurance/financial companies benefit)
-- Is this equity's expected return competitive vs CDI ~14.75% a.a.?
+- Is this equity's expected return competitive vs the current CDI (from RAW_MACRO)?
 
 ### BRL/USD Impact
 - Is this company an exporter (benefits from weak BRL), importer (hurt), or domestic (neutral)?
@@ -51,7 +51,7 @@ SELIC ({value}% a.a., {direction}): {specific impact on this company}
 BRL/USD ({value}, {trend}): {exporter/importer/neutral — specific impact}
 IPCA ({value}% accumulated): {pricing power or cost pressure?}
 
-CDI HURDLE: Equity return must exceed ~14.75% a.a. — {assessment}
+CDI HURDLE: Equity return must exceed {current CDI}% a.a. — {assessment}
 
 SUMMARY: {2-3 sentences on macro environment for this specific company}
 ```

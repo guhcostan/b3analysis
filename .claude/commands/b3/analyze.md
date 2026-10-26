@@ -46,9 +46,9 @@ cat .b3profile 2>/dev/null || echo "balanced"
 
 | Profile | Data agents model | Synthesis model (main session) |
 |---|---|---|
-| `quality` | `claude-opus-4-6` | `claude-opus-4-6` |
-| `balanced` | `claude-sonnet-4-6` | `claude-sonnet-4-6` |
-| `budget` | `claude-haiku-4-5` | `claude-sonnet-4-6` |
+| `quality` | `claude-opus-5-5` | `claude-opus-5-5` |
+| `balanced` | `claude-sonnet-5-5` | `claude-sonnet-5-5` |
+| `budget` | `claude-haiku-5-5` | `claude-sonnet-5-5` |
 
 Use `claude --model {MODEL} -p "..."` as bash for data agents when model differs from session.
 
@@ -97,7 +97,7 @@ Critérios 1, 2 e 3 são **eliminatórios** — falha em qualquer um = AVOID aut
 | 4 | Novo Mercado | ✅/⚠️/❌ | ... |
 | 5 | Tag Along 100% | ✅/⚠️/❌ | ... |
 | 6 | Dívida controlada (caixa líquido ou D/EBITDA < 2x) | ✅/⚠️/❌ | ... |
-| 7 | Retorno esperado > CDI (~14,75% a.a.) | ✅/⚠️/❌ | ... |
+| 7 | Retorno esperado > CDI vigente | ✅/⚠️/❌ | ... |
 
 **Score: X/7 — SIGNAL**
 
@@ -115,7 +115,7 @@ Critérios 1, 2 e 3 são **eliminatórios** — falha em qualquer um = AVOID aut
 - Valuation: P/L, P/VP, Dividend Yield, FCF Yield
 
 ### 5. Contexto Macroeconômico
-- Como a Selic ~14,75% a.a. afeta este negócio?
+- Como a Selic no nível atual afeta este negócio?
 - Impacto do câmbio (exportadora / importadora / neutro)?
 - Exposição ao IPCA?
 - Riscos regulatórios/fiscais do setor?
